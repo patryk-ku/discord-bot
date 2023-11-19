@@ -32,7 +32,7 @@ module.exports = {
 				.addSubcommand(subcommand =>
 					subcommand
 						.setName('users')
-						.setDescription('List all lastfm users from this server..')))
+						.setDescription('List all last.fm users from this server.')))
 		.setDefaultMemberPermissions(0),
 	async execute(interaction) {
 
