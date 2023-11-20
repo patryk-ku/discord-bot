@@ -11,6 +11,7 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 | `/lastfm remove` | Delete your lastfm nickname from bot database. |
 | `/np` | Replies with your now playing song. |
 | `/playing` | Replies with every server user now playing song (max 25 users). |
+| `/lastfm recent` | Replies with user recently scrobbled songs. |
 
 ### Utility
 

@@ -1,5 +1,6 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const validator = require('validator');
+require('dotenv').config();
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -16,7 +17,19 @@ module.exports = {
 		.addSubcommand(subcommand =>
 			subcommand
 				.setName('remove')
-				.setDescription('Delete your lastfm nickname from bot database.')),
+				.setDescription('Delete your lastfm nickname from bot database.'))
+		.addSubcommand(subcommand =>
+			subcommand
+				.setName('recent')
+				.setDescription('Replies with user recently scrobbled songs.')
+				.addIntegerOption(option =>
+					option.setName('amount')
+						.setDescription('Number of songs (default 5, max 10).')
+						.setMinValue(1)
+						.setMaxValue(10))
+				.addUserOption(option =>
+					option.setName('user')
+						.setDescription('The user (default you).'))),
 	async execute(interaction) {
 
 		switch (interaction.options.getSubcommand()) {
@@ -36,8 +49,6 @@ module.exports = {
 					return interaction.editReply(`Your lastfm login is set to: \`${row.lastfm}\``);
 				} catch (error) {
 					if (error.name === 'SequelizeUniqueConstraintError') {
-						// return interaction.editReply('Error: That user already exists. Use `updatelastfm` command instead');
-
 						interaction.editReply('User exist in database, updating nickname.');
 						const affectedRows = await interaction.client.Users.update({ lastfm: nickname }, { where: { user: interaction.user.id } });
 
@@ -63,6 +74,70 @@ module.exports = {
 				}
 
 				return interaction.editReply('User deleted.');
+			}
+
+			case 'recent': {
+				await interaction.deferReply();
+				console.log('-> New interaction: "lastfm recent"');
+				const user = interaction.options.getUser('user') ?? interaction.user;
+				const amount = interaction.options.getInteger('amount') ?? 5;
+
+				const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+				if (userData) {
+					const lastfmLogin = userData.get('lastfm');
+					await interaction.editReply(`Fetching data from last.fm for user: \`${lastfmLogin}\`...`);
+
+					const recentSongs = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${amount}`).then((res) => res.json()).catch(error => { return error; });
+
+					if (recentSongs.error) {
+						if (recentSongs.error == 6) {
+							await interaction.editReply(`Last.fm error response: User \`${lastfmLogin}\` not found 💀`);
+						} else {
+							await interaction.editReply('Unknown Last.fm API error 🔥');
+						}
+						return;
+					}
+
+					if (!recentSongs.recenttracks) {
+						return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
+					}
+
+					if (!recentSongs.recenttracks.track[0]) {
+						return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
+					}
+
+					if (recentSongs.recenttracks.track.length == 0) {
+						return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
+					}
+
+					const multiEmbedd = [];
+
+					for (const song of recentSongs.recenttracks.track) {
+
+						if (song['@attr']) {
+							if (song['@attr'].nowplaying) {
+								continue;
+							}
+						}
+
+						const songEmbed = new EmbedBuilder()
+							.setColor(0xC3000D);
+
+						// Check if album cover url exists
+						if (song.image[3]['#text']) {
+							songEmbed.setAuthor({ name: `${song.name}  -  ${song.artist['#text']}`, iconURL: song.image[3]['#text'] });
+						} else {
+							songEmbed.setAuthor({ name: `${song.name}  -  ${song.artist['#text']}` });
+						}
+
+						multiEmbedd.push(songEmbed);
+					}
+
+					return await interaction.editReply({ content: `## \`${lastfmLogin}\` recent ${amount} songs:`, embeds: [...multiEmbedd] });
+
+				} else {
+					return await interaction.editReply('Could not find user in a database. Use `lastfm set` command to add your last.fm nickname to bot database');
+				}
 			}
 
 			default: {
