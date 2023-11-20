@@ -36,6 +36,7 @@ module.exports = {
 
 			case 'set': {
 				await interaction.deferReply();
+				console.log('-> New interaction: "lastfm set"');
 
 				const nickname = validator.escape(interaction.options.getString('nickname'));
 				await interaction.editReply(`Setting your nickname to: \`${nickname}\``);
@@ -64,6 +65,7 @@ module.exports = {
 
 			case 'remove': {
 				await interaction.deferReply();
+				console.log('-> New interaction: "lastfm remove"');
 				await interaction.editReply('Deleting your last.fm username from database...');
 
 				// deletes user from database
@@ -85,7 +87,7 @@ module.exports = {
 				const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
 				if (userData) {
 					const lastfmLogin = userData.get('lastfm');
-					await interaction.editReply(`Fetching data from last.fm for user: \`${lastfmLogin}\`...`);
+					// await interaction.editReply(`Fetching data from last.fm for user: \`${lastfmLogin}\`...`);
 
 					const recentSongs = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${amount}`).then((res) => res.json()).catch(error => { return error; });
 

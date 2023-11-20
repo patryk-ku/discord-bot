@@ -4,14 +4,18 @@ require('dotenv').config();
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('np')
-		.setDescription('Replies with your now playing song!'),
+		.setDescription('Replies with user now playing song!')
+		.addUserOption(option =>
+			option.setName('user')
+				.setDescription('The user (default you).')),
 	async execute(interaction) {
 		await interaction.deferReply();
-		console.log('-> New interaction: "nowPlaying"');
+		console.log('-> New interaction: "np"');
 		await interaction.editReply('Loading...');
 		await interaction.editReply('Connecting with database...');
+		const user = interaction.options.getUser('user') ?? interaction.user;
 
-		const userdata = await interaction.client.Users.findOne({ where: { user: interaction.user.id } });
+		const userdata = await interaction.client.Users.findOne({ where: { user: user.id } });
 
 		if (userdata) {
 			const fmlogin = userdata.get('lastfm');
@@ -56,11 +60,11 @@ module.exports = {
 
 			if (lastSong.recenttracks.track[0]['@attr']) {
 				if (lastSong.recenttracks.track[0]['@attr'].nowplaying) {
-					songEmbed.setAuthor({ name: 'Now playing:', url: lastSong.recenttracks.track[0].url, iconURL: `https://cdn.discordapp.com/avatars/${interaction.user.id}/${interaction.user.avatar}.jpeg` });
+					songEmbed.setAuthor({ name: 'Now playing:', url: lastSong.recenttracks.track[0].url, iconURL: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.jpeg` });
 					// songEmbed.setTimestamp();
 				}
 			} else {
-				songEmbed.setAuthor({ name: 'Last song:', url: lastSong.recenttracks.track[0].url, iconURL: `https://cdn.discordapp.com/avatars/${interaction.user.id}/${interaction.user.avatar}.jpeg` });
+				songEmbed.setAuthor({ name: 'Last song:', url: lastSong.recenttracks.track[0].url, iconURL: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.jpeg` });
 			}
 
 			await interaction.editReply({ content: '', embeds: [songEmbed] });
