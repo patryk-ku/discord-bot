@@ -25,6 +25,10 @@ module.exports = {
 		const guild = await interaction.client.Users.findAll({ where: { user: { [Sequelize.Op.in]: membersIds } } });
 		// console.log(guild);
 
+		if (guild.length == 0) {
+			return await interaction.editReply('No one on this server has submitted their last.fm nickname to the bot.');
+		}
+
 		await interaction.editReply('Fetching data from last.fm for all users...');
 		const request = [];
 		for (let i = 0; i < guild.length; i++) {

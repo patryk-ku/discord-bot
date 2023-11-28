@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const validator = require('validator');
+const Sequelize = require('sequelize');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -57,10 +58,12 @@ module.exports = {
 						} catch (error) {
 							if (error.name === 'SequelizeUniqueConstraintError') {
 								interaction.editReply({ content: 'User exist in database, updating nickname.', ephemeral: true });
-								const affectedRows = await interaction.client.Users.update({ lastfm: nickname }, { where: { user: user.id } });
+								const affectedRows = await interaction.client.Users.update({ lastfm: nickname }, { where: { user: user.id, locked: { [Sequelize.Op.not]: true } } });
 
 								if (affectedRows > 0) {
 									return interaction.editReply({ content: `\`${user.username}\` new nickname is \`${nickname}\`.`, ephemeral: true });
+								} else {
+									return interaction.editReply({ content: ` Setting nickname for \`${user.username}\` failed. The user has probably blocked this possibility for you.`, ephemeral: true });
 								}
 							}
 
@@ -77,10 +80,10 @@ module.exports = {
 						await interaction.editReply({ content: `Deleting \`${user.username}\` last.fm nickname from database...`, ephemeral: true });
 
 						// deletes user from database
-						const rowCount = await interaction.client.Users.destroy({ where: { user: user.id } });
+						const rowCount = await interaction.client.Users.destroy({ where: { user: user.id, locked: { [Sequelize.Op.not]: true } } });
 
 						if (!rowCount) {
-							return interaction.editReply({ content: `\`${user.username}\` doesn't exist in database.`, ephemeral: true });
+							return interaction.editReply({ content: `\`${user.username}\` doesn't exist in database or has blocked this possibility for you`, ephemeral: true });
 						}
 
 						return interaction.editReply({ content: `\`${user.username}\` deleted from database.`, ephemeral: true });

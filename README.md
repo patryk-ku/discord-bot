@@ -7,8 +7,9 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 
 | command | description |
 | ----------- | ----------- |
-| `/lastfm set` | Set or update your lastfm nickname. |
-| `/lastfm remove` | Delete your lastfm nickname from bot database. |
+| `/lastfm nickname set` | Set or update your lastfm nickname. |
+| `/lastfm nickname remove` | Delete your lastfm nickname from bot database. |
+| `/lastfm nickname lock` | Prevent the server admins from changing your nickname. |
 | `/np` | Replies with your now playing song. |
 | `/playing` | Replies with every server user now playing song (max 25 users). |
 | `/lastfm recent` | Replies with user recently scrobbled songs. |
