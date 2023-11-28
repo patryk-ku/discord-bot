@@ -175,7 +175,7 @@ module.exports = {
 							return await interaction.editReply({ content: `## \`${lastfmLogin}\` recent ${amount} songs:`, embeds: [...multiEmbedd] });
 
 						} else {
-							return await interaction.editReply('Could not find user in a database. Use `lastfm set` command to add your last.fm nickname to bot database');
+							return await interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database');
 						}
 					}
 

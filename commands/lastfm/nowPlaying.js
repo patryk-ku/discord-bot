@@ -70,7 +70,7 @@ module.exports = {
 			await interaction.editReply({ content: '', embeds: [songEmbed] });
 
 		} else {
-			await interaction.editReply('Could not find user in a database. Use `lastfm set` command to add your last.fm nickname to bot database');
+			await interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database');
 			return;
 		}
 	},
