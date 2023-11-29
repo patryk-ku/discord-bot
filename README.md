@@ -13,12 +13,13 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 | `/np` | Replies with your now playing song. |
 | `/playing` | Replies with every server user now playing song (max 25 users). |
 | `/lastfm recent` | Replies with user recently scrobbled songs. |
+| `/yt` | Replies with first video from youtube search of user now playing song. |
 
 ### Utility
 
 | command | description |
 | ----------- | ----------- |
-| `/embed` | Embeds video from given url (insta/reddit/twitter etc).. |
+| `/embed` | Embeds video from given url (insta/reddit/twitter etc). |
 | `/avatar` | Embeds avatar image of given user. |
 
 ### Administrator commands

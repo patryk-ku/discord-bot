@@ -6,7 +6,7 @@ const Sequelize = require('sequelize');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('playing')
-		.setDescription('Replies with entire server now playing song!')
+		.setDescription('Replies with entire server now playing song.')
 		.addBooleanOption(option =>
 			option.setName('recent')
 				.setDescription('If the user isn\'t listening to anything right now, show their last song instead.'))
