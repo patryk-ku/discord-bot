@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const ytsr = require('ytsr');
 require('dotenv').config();
 
@@ -11,7 +11,7 @@ module.exports = {
 				.setDescription('The user (default you).')),
 	async execute(interaction) {
 		await interaction.deferReply();
-		console.log('-> New interaction: "yt"');
+		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 		await interaction.editReply('Loading...');
 		await interaction.editReply('Connecting with database...');
 		const user = interaction.options.getUser('user') ?? interaction.user;

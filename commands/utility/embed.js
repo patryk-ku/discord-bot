@@ -16,7 +16,7 @@ module.exports = {
 				.setRequired(true)),
 	async execute(interaction) {
 		await interaction.deferReply();
-		console.log('-> New interaction: "embed"');
+		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 		const url = interaction.options.getString('url');
 
 		// Validate if link

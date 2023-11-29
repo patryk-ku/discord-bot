@@ -50,7 +50,7 @@ module.exports = {
 				switch (interaction.options.getSubcommand()) {
 					case 'set': {
 						await interaction.deferReply();
-						console.log('-> New interaction: "lastfm nickname set"');
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 
 						const nickname = validator.escape(interaction.options.getString('nickname'));
 						await interaction.editReply(`Setting your nickname to: \`${nickname}\``);
@@ -79,7 +79,7 @@ module.exports = {
 
 					case 'remove': {
 						await interaction.deferReply();
-						console.log('-> New interaction: "lastfm nickname remove"');
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						await interaction.editReply('Deleting your last.fm username from database...');
 
 						// deletes user from database
@@ -94,7 +94,7 @@ module.exports = {
 
 					case 'lock': {
 						await interaction.deferReply({ ephemeral: true });
-						console.log('-> New interaction: "lastfm nickname lock"');
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						const lock = interaction.options.getBoolean('action');
 
 						const affectedRows = await interaction.client.Users.update({ locked: lock }, { where: { user: interaction.user.id } });
@@ -117,7 +117,7 @@ module.exports = {
 				switch (interaction.options.getSubcommand()) {
 					case 'recent': {
 						await interaction.deferReply();
-						console.log('-> New interaction: "lastfm recent"');
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						const amount = interaction.options.getInteger('amount') ?? 5;
 

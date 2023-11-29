@@ -13,7 +13,7 @@ module.exports = {
 		.setDMPermission(false),
 	async execute(interaction) {
 		await interaction.deferReply();
-		console.log('-> New interaction: "playing"');
+		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 		const recent = interaction.options.getBoolean('recent');
 		await interaction.editReply('Loading...');
 		await interaction.editReply('Connecting with database...');

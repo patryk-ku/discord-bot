@@ -43,7 +43,7 @@ module.exports = {
 				switch (interaction.options.getSubcommand()) {
 					case 'set': {
 						await interaction.deferReply({ ephemeral: true });
-						console.log('-> New interaction: "admin lastfm set"');
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						const user = interaction.options.getUser('user');
 						const nickname = validator.escape(interaction.options.getString('nickname'));
 						await interaction.editReply({ content: `Setting \`${user.username}\` last.fm nickname to: \`${nickname}\``, ephemeral: true });
@@ -75,7 +75,7 @@ module.exports = {
 
 					case 'remove': {
 						await interaction.deferReply({ ephemeral: true });
-						console.log('-> New interaction: "admin lastfm remove"');
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						const user = interaction.options.getUser('user');
 						await interaction.editReply({ content: `Deleting \`${user.username}\` last.fm nickname from database...`, ephemeral: true });
 
@@ -91,7 +91,7 @@ module.exports = {
 
 					case 'users': {
 						await interaction.deferReply({ ephemeral: true });
-						console.log('-> New interaction: "admin lastfm users"');
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						return interaction.editReply({ content: 'WIP: command not ready yet', ephemeral: true });
 					}
 
