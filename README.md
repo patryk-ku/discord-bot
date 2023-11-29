@@ -36,6 +36,7 @@ They require administrator privileges on the server
 
 - Node.js v18 or higher
 - yt-dlp (for `/embed` command)
+- ffmpeg (for `/embed` compression option)
 - Any modern linux instalation (for now this bot is linux only, may change later)
 
 ## Installation and setup
