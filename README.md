@@ -14,6 +14,7 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 | `/playing` | Replies with every server user now playing song (max 25 users). |
 | `/lastfm recent` | Replies with user recently scrobbled songs. |
 | `/yt` | Replies with first video from youtube search of user now playing song. |
+| `/lastfm collage` | Replies with user top albums collage. |
 
 ### Utility
 

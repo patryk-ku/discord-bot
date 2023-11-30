@@ -1,5 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const validator = require('validator');
+const Canvas = require('@napi-rs/canvas');
+const { request } = require('undici');
 require('dotenv').config();
 
 module.exports = {
@@ -39,6 +41,23 @@ module.exports = {
 						.setDescription('Number of songs (default 5, max 10).')
 						.setMinValue(1)
 						.setMaxValue(10))
+				.addUserOption(option =>
+					option.setName('user')
+						.setDescription('The user (default you).')))
+		.addSubcommand(subcommand =>
+			subcommand
+				.setName('collage')
+				.setDescription('Replies with user top albums collage.')
+				.addStringOption(option =>
+					option.setName('range')
+						.setDescription('Date range.')
+						.setRequired(true)
+						.addChoices(
+							{ name: 'week', value: '7day' },
+							{ name: 'month', value: '1month' },
+							{ name: 'year', value: '12month' },
+							{ name: 'overall', value: 'overall' },
+						))
 				.addUserOption(option =>
 					option.setName('user')
 						.setDescription('The user (default you).'))),
@@ -115,6 +134,85 @@ module.exports = {
 
 			default: {
 				switch (interaction.options.getSubcommand()) {
+					case 'collage': {
+						await interaction.deferReply();
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						const user = interaction.options.getUser('user') ?? interaction.user;
+						const range = interaction.options.getString('range');
+
+						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						if (userData) {
+							const lastfmLogin = userData.get('lastfm');
+
+							const albums = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettopalbums&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=9&period=${range}`).then((res) => res.json()).catch(error => { return error; });
+
+							if (albums.error) {
+								if (albums.error == 6) {
+									await interaction.editReply(`Last.fm error response: User \`${lastfmLogin}\` not found 💀`);
+								} else {
+									await interaction.editReply('Unknown Last.fm API error 🔥');
+								}
+								return;
+							}
+
+							// console.log(albums);
+
+							if (!albums.topalbums) {
+								return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
+							}
+
+							if (!albums.topalbums.album[0]) {
+								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
+							}
+
+							if (albums.topalbums.album == 0) {
+								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
+							}
+
+							const canvas = Canvas.createCanvas(900, 900);
+							const context = canvas.getContext('2d');
+
+							let x = 0, y = 0;
+							for (const album of albums.topalbums.album) {
+
+								// console.log(album.image[3]['#text']);
+								// console.log(`${x}:${y}`);
+
+								if (album.image[3]['#text'].length > 0) {
+									const { body } = await request(album.image[3]['#text']);
+									const cover = await Canvas.loadImage(await body.arrayBuffer());
+									context.drawImage(cover, x, y, 300, 300);
+								} else {
+									// context.fillRect(x, y, 300, 300);
+								}
+
+								x += 300;
+								if (x == 900) {
+									x = 0;
+									y += 300;
+								}
+							}
+
+							let rangeString = '';
+							if (range == '7day') {
+								rangeString = 'week';
+							} else if (range == '1month') {
+								rangeString = 'month';
+							} else if (range == '12month') {
+								rangeString = 'year';
+							} else if (range == 'overall') {
+								rangeString = 'all time';
+							}
+
+							const attachment = new AttachmentBuilder(await canvas.encode('jpeg'), { name: 'collage.jpeg' });
+							return interaction.editReply({ content: `## \`${lastfmLogin}\` top albums of the ${rangeString}:`, files: [attachment] });
+
+
+						} else {
+							return interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database');
+						}
+					}
+
 					case 'recent': {
 						await interaction.deferReply();
 						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
