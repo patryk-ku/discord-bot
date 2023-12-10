@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, userMention } = require('discord.js');
 const validator = require('validator');
 const Canvas = require('@napi-rs/canvas');
 const { request } = require('undici');
@@ -32,6 +32,76 @@ module.exports = {
 							option.setName('action')
 								.setDescription('Lock - true or false.')
 								.setRequired(true))))
+		.addSubcommandGroup(subcommandgroup =>
+			subcommandgroup
+				.setName('top')
+				.setDescription('Last.fm user top charts.')
+				.addSubcommand(subcommand =>
+					subcommand
+						.setName('artists')
+						.setDescription('Replies with user top artists chart.')
+						.addStringOption(option =>
+							option.setName('range')
+								.setDescription('Date range.')
+								.setRequired(true)
+								.addChoices(
+									{ name: 'week', value: '7day' },
+									{ name: 'month', value: '1month' },
+									{ name: 'year', value: '12month' },
+									{ name: 'overall', value: 'overall' },
+								))
+						.addIntegerOption(option =>
+							option.setName('amount')
+								.setDescription('Number of artists (default 10, max 20).')
+								.setMinValue(1)
+								.setMaxValue(20))
+						.addUserOption(option =>
+							option.setName('user')
+								.setDescription('The user (default you).')))
+				.addSubcommand(subcommand =>
+					subcommand
+						.setName('albums')
+						.setDescription('Replies with user top albums chart.')
+						.addStringOption(option =>
+							option.setName('range')
+								.setDescription('Date range.')
+								.setRequired(true)
+								.addChoices(
+									{ name: 'week', value: '7day' },
+									{ name: 'month', value: '1month' },
+									{ name: 'year', value: '12month' },
+									{ name: 'overall', value: 'overall' },
+								))
+						.addIntegerOption(option =>
+							option.setName('amount')
+								.setDescription('Number of albums (default 10, max 20).')
+								.setMinValue(1)
+								.setMaxValue(20))
+						.addUserOption(option =>
+							option.setName('user')
+								.setDescription('The user (default you).')))
+				.addSubcommand(subcommand =>
+					subcommand
+						.setName('tracks')
+						.setDescription('Replies with user top tracks chart.')
+						.addStringOption(option =>
+							option.setName('range')
+								.setDescription('Date range.')
+								.setRequired(true)
+								.addChoices(
+									{ name: 'week', value: '7day' },
+									{ name: 'month', value: '1month' },
+									{ name: 'year', value: '12month' },
+									{ name: 'overall', value: 'overall' },
+								))
+						.addIntegerOption(option =>
+							option.setName('amount')
+								.setDescription('Number of tracks (default 10, max 20).')
+								.setMinValue(1)
+								.setMaxValue(20))
+						.addUserOption(option =>
+							option.setName('user')
+								.setDescription('The user (default you).'))))
 		.addSubcommand(subcommand =>
 			subcommand
 				.setName('recent')
@@ -130,6 +200,103 @@ module.exports = {
 						return interaction.reply({ content: 'Error: Missing subcommand.', ephemeral: true });
 					}
 				}
+			}
+
+			case 'top': {
+				switch (interaction.options.getSubcommand()) {
+					case 'artists': {
+						await interaction.deferReply();
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+
+						const user = interaction.options.getUser('user') ?? interaction.user;
+						const range = interaction.options.getString('range');
+						const amount = interaction.options.getInteger('amount') ?? 5;
+						break;
+					}
+
+					case 'albums': {
+						await interaction.deferReply();
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+
+						const user = interaction.options.getUser('user') ?? interaction.user;
+						const range = interaction.options.getString('range');
+						const amount = interaction.options.getInteger('amount') ?? 10;
+
+						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						if (userData) {
+							const lastfmLogin = userData.get('lastfm');
+
+							const albums = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettopalbums&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${amount}&period=${range}`).then((res) => res.json()).catch(error => { return error; });
+
+							if (albums.error) {
+								if (albums.error == 6) {
+									await interaction.editReply(`Last.fm error response: User \`${lastfmLogin}\` not found 💀`);
+								} else {
+									await interaction.editReply('Unknown Last.fm API error 🔥');
+								}
+								return;
+							}
+
+							if (!albums.topalbums) {
+								return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
+							}
+
+							if (!albums.topalbums.album[0]) {
+								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
+							}
+
+							if (albums.topalbums.album == 0) {
+								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
+							}
+
+							let rangeString = '';
+							if (range == '7day') {
+								rangeString = 'week';
+							} else if (range == '1month') {
+								rangeString = 'month';
+							} else if (range == '12month') {
+								rangeString = 'year';
+							} else if (range == 'overall') {
+								rangeString = 'all time';
+							}
+
+							const albumEmbed = new EmbedBuilder()
+								.setColor(0xC3000D)
+								.setAuthor({ name: `${user.username} top albums of the ${rangeString}:`, iconURL: user.avatarURL() })
+								.setFooter({ text: `total ${albums.topalbums['@attr'].total} albums played (${rangeString})` });
+
+							let descriptionString = '';
+
+							for (const [index, album] of albums.topalbums.album.entries()) {
+
+								descriptionString += `\n${index + 1}. **${album.artist.name}** - [**${album.name}**](${album.url}) - (**${album.playcount}** *plays*)`;
+							}
+
+							albumEmbed.setDescription(descriptionString);
+
+							return interaction.editReply({ content: '', embeds: [albumEmbed] });
+
+
+						} else {
+							return interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database');
+						}
+					}
+
+					case 'tracks': {
+						await interaction.deferReply();
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+
+						const user = interaction.options.getUser('user') ?? interaction.user;
+						const range = interaction.options.getString('range');
+						const amount = interaction.options.getInteger('amount') ?? 5;
+						break;
+					}
+
+					default: {
+						return interaction.reply({ content: 'Error: Missing subcommand.', ephemeral: true });
+					}
+				}
+				break;
 			}
 
 			default: {
