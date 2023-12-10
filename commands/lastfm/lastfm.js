@@ -130,6 +130,13 @@ module.exports = {
 						))
 				.addUserOption(option =>
 					option.setName('user')
+						.setDescription('The user (default you).')))
+		.addSubcommand(subcommand =>
+			subcommand
+				.setName('profile')
+				.setDescription('Replies with user last.fm profile summary.')
+				.addUserOption(option =>
+					option.setName('user')
 						.setDescription('The user (default you).'))),
 	async execute(interaction) {
 
@@ -548,6 +555,63 @@ module.exports = {
 							}
 
 							return await interaction.editReply({ content: `## \`${lastfmLogin}\` recent ${amount} songs:`, embeds: [...multiEmbedd] });
+
+						} else {
+							return await interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');
+						}
+					}
+
+					case 'profile': {
+						await interaction.deferReply();
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						const user = interaction.options.getUser('user') ?? interaction.user;
+
+						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						if (userData) {
+							const lastfmLogin = userData.get('lastfm');
+
+							const profile = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json`).then((res) => res.json()).catch(error => { return error; });
+
+							if (profile.error) {
+								if (profile.error == 6) {
+									await interaction.editReply(`Last.fm error response: User \`${lastfmLogin}\` not found 💀`);
+								} else {
+									await interaction.editReply('Unknown Last.fm API error 🔥');
+								}
+								return;
+							}
+
+							if (!profile.user) {
+								return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
+							}
+
+							const profileEmbed = new EmbedBuilder()
+								.setColor(0xC3000D)
+								.setAuthor({ name: `${user.username} last.fm profile:`, iconURL: user.avatarURL(), url: profile.user.url })
+								.setThumbnail(profile.user.image[3]['#text'])
+								// .setImage(profile.user.image[3]['#text'])
+								.addFields(
+									{ name: 'Nickname', value: profile.user.name, inline: true },
+									{ name: 'Scrobbles', value: profile.user.playcount, inline: true },
+									{ name: '\u200B', value: 'Total count:' },
+									{ name: 'Tracks', value: profile.user.track_count, inline: true },
+									{ name: 'Albums', value: profile.user.album_count, inline: true },
+									{ name: 'Artists', value: profile.user.artist_count, inline: true },
+								)
+								.setFooter({ text: 'Scrobbling since' })
+								.setTimestamp(new Date(profile.user.registered.unixtime * 1000))
+								;
+
+							if (profile.user.country) {
+								if (profile.user.country != 'None' && profile.user.country.length > 0) {
+									profileEmbed.addFields(
+										// { name: '\u200B', value: 'Other:' },
+										{ name: 'Country', value: profile.user.country },
+									);
+								}
+							}
+
+							return interaction.editReply({ content: '', embeds: [profileEmbed] });
 
 						} else {
 							return await interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');

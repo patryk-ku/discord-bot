@@ -15,6 +15,10 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 | `/lastfm recent` | Replies with user recently scrobbled songs. |
 | `/yt` | Replies with first video from youtube search of user now playing song. |
 | `/lastfm collage` | Replies with user top albums collage. |
+| `/lastfm top artists` | Replies with user top artists chart. |
+| `/lastfm top albums` | Replies with user top albums chart. |
+| `/lastfm top tracks` | Replies with user top tracks chart. |
+| `/lastfm profile` | Replies with user last.fm profile summary. |
 
 ### Utility
 
@@ -45,7 +49,7 @@ They require administrator privileges on the server
 1. Go to [Discord Developer Portal](https://discord.com/developers) and create new application with bot. Get here `APPLICATION ID` and `BOT TOKEN` and copy them to `.env.example` file.
 2. Discord bot permissions (WIP)
 3. For last.fm features you need to obtain their API key [here](https://www.last.fm/api/account/create).
-4. Rename `.env.example` to `.env`
+4. Clone repository and rename `.env.example` to `.env`
 
 	```sh
 	mv .env.example .env
