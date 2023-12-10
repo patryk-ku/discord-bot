@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, userMention } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const validator = require('validator');
 const Canvas = require('@napi-rs/canvas');
 const { request } = require('undici');
@@ -392,7 +392,6 @@ module.exports = {
 							let descriptionString = '';
 
 							for (const [index, track] of tracks.toptracks.track.entries()) {
-								console.log(track);
 								descriptionString += `\n${index + 1}. **${track.artist.name}** - [**${track.name}**](${track.url}) - **${track.playcount}** *plays*`;
 							}
 
@@ -410,7 +409,6 @@ module.exports = {
 						return interaction.reply({ content: 'Error: Missing subcommand.', ephemeral: true });
 					}
 				}
-				break;
 			}
 
 			default: {
@@ -435,8 +433,6 @@ module.exports = {
 								}
 								return;
 							}
-
-							// console.log(albums);
 
 							if (!albums.topalbums) {
 								return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
