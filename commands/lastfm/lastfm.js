@@ -210,8 +210,67 @@ module.exports = {
 
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						const range = interaction.options.getString('range');
-						const amount = interaction.options.getInteger('amount') ?? 5;
-						break;
+						const amount = interaction.options.getInteger('amount') ?? 10;
+
+						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						if (userData) {
+							const lastfmLogin = userData.get('lastfm');
+
+							const artists = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${amount}&period=${range}`).then((res) => res.json()).catch(error => { return error; });
+
+							console.log(artists);
+
+							if (artists.error) {
+								if (artists.error == 6) {
+									await interaction.editReply(`Last.fm error response: User \`${lastfmLogin}\` not found 💀`);
+								} else {
+									await interaction.editReply('Unknown Last.fm API error 🔥');
+								}
+								return;
+							}
+
+							if (!artists.topartists) {
+								return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
+							}
+
+							if (!artists.topartists.artist[0]) {
+								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
+							}
+
+							if (artists.topartists.artist == 0) {
+								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
+							}
+
+							let rangeString = '';
+							if (range == '7day') {
+								rangeString = 'week';
+							} else if (range == '1month') {
+								rangeString = 'month';
+							} else if (range == '12month') {
+								rangeString = 'year';
+							} else if (range == 'overall') {
+								rangeString = 'all time';
+							}
+
+							const artistEmbed = new EmbedBuilder()
+								.setColor(0xC3000D)
+								.setAuthor({ name: `${user.username} top artists of the ${rangeString}:`, iconURL: user.avatarURL() })
+								.setFooter({ text: `total ${artists.topartists['@attr'].total} artist played (${rangeString})` });
+
+							let descriptionString = '';
+
+							for (const [index, artist] of artists.topartists.artist.entries()) {
+								descriptionString += `\n${index + 1}. [**${artist.name}**](${artist.url}) - **${artist.playcount}** *plays*`;
+							}
+
+							artistEmbed.setDescription(descriptionString);
+
+							return interaction.editReply({ content: '', embeds: [artistEmbed] });
+
+
+						} else {
+							return interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');
+						}
 					}
 
 					case 'albums': {
@@ -268,7 +327,6 @@ module.exports = {
 							let descriptionString = '';
 
 							for (const [index, album] of albums.topalbums.album.entries()) {
-
 								descriptionString += `\n${index + 1}. **${album.artist.name}** - [**${album.name}**](${album.url}) - (**${album.playcount}** *plays*)`;
 							}
 
@@ -278,7 +336,7 @@ module.exports = {
 
 
 						} else {
-							return interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database');
+							return interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');
 						}
 					}
 
@@ -376,7 +434,7 @@ module.exports = {
 
 
 						} else {
-							return interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database');
+							return interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');
 						}
 					}
 
@@ -440,7 +498,7 @@ module.exports = {
 							return await interaction.editReply({ content: `## \`${lastfmLogin}\` recent ${amount} songs:`, embeds: [...multiEmbedd] });
 
 						} else {
-							return await interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database');
+							return await interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');
 						}
 					}
 
