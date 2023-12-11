@@ -145,14 +145,15 @@ module.exports = {
 
 							const songEmbed = new EmbedBuilder()
 								// .setColor(0x362e6e)
-								.setColor(0xbf458e)
+								// .setColor(0xbf458e)
+								.setColor(0xf07543)
 								// .setTitle(nowPlaying.payload.listens[0].track_metadata.track_name)
 								// .setTitle(`${nowPlaying.payload.listens[0].track_metadata.artist_name} - ${nowPlaying.payload.listens[0].track_metadata.track_name}`);
 								.setFooter({ text: 'Listenbrainz' })
 								.setTimestamp(new Date())
 								.addFields(
-									{ name: 'track', value: nowPlaying.payload.listens[0].track_metadata.track_name, inline: true },
-									{ name: 'artist', value: nowPlaying.payload.listens[0].track_metadata.artist_name, inline: true },
+									{ name: 'track', value: `**${nowPlaying.payload.listens[0].track_metadata.track_name}**`, inline: true },
+									{ name: 'artist', value: `**${nowPlaying.payload.listens[0].track_metadata.artist_name}**`, inline: true },
 									// { name: 'album:', value: '', inline: true },
 								);
 
@@ -161,6 +162,7 @@ module.exports = {
 								songEmbed.setThumbnail(artwork);
 							}
 
+							// todo: fix url when no mbid
 							if (nowPlaying.payload.playing_now) {
 								songEmbed.setAuthor({ name: 'Now playing:', url: `https://musicbrainz.org/recording/${nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid}`, iconURL: user.avatarURL() });
 							} else {

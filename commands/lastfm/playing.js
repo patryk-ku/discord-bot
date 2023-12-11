@@ -31,11 +31,13 @@ module.exports = {
 
 		await interaction.editReply('Fetching data from last.fm for all users...');
 		const request = [];
+		const requestUsersId = [];
 		for (let i = 0; i < guild.length; i++) {
 			const fmlogin = guild[i].dataValues.lastfm;
 			// console.log(`fetching user: ${fmlogin}`);
 			const url = `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${fmlogin}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=1`;
 			const user = fetch(url).then((res) => res.json());
+			requestUsersId.push(guild[i].dataValues.user);
 			request.push(user);
 		}
 
@@ -47,7 +49,8 @@ module.exports = {
 			.setColor(0xC3000D)
 			.setAuthor({ name: `${interaction.guild.name} - now playing:`, iconURL: `https://cdn.discordapp.com/icons/${interaction.guild.id}/${interaction.guild.icon}.jpg` });
 
-		for (const user of users) {
+		let descriptionString = '';
+		for (const [index, user] of users.entries()) {
 			if (user.error) {
 				continue;
 			}
@@ -59,13 +62,21 @@ module.exports = {
 			if (user.recenttracks.track[0]['@attr']) {
 				if (user.recenttracks.track[0]['@attr'].nowplaying) {
 					usersCounter++;
-					songEmbed.addFields({ name: user.recenttracks['@attr'].user, value: `- ${user.recenttracks.track[0].name} - ${user.recenttracks.track[0].artist['#text']}` },
-					);
+
+					// songEmbed.addFields({ name: `<@${requestUsersId[index]}> ${user.recenttracks['@attr'].user}`, value: `- ${user.recenttracks.track[0].name} - ${user.recenttracks.track[0].artist['#text']}` });
+
+					// descriptionString += `\n- <@${requestUsersId[index]}>:\n[**${user.recenttracks.track[0].name}**](${user.recenttracks.track[0].url}) - **${user.recenttracks.track[0].artist['#text']}**`;
+
+					descriptionString += `\n### [**${user.recenttracks.track[0].name}**](${user.recenttracks.track[0].url}) - **${user.recenttracks.track[0].artist['#text']}**\n- <@${requestUsersId[index]}>\n`;
 				}
 			} else if (recent && user.recenttracks.track[0]) {
 				usersCounter++;
-				songEmbed.addFields({ name: user.recenttracks['@attr'].user + ' (last song)', value: `- ${user.recenttracks.track[0].name} - ${user.recenttracks.track[0].artist['#text']}` },
-				);
+				// songEmbed.addFields({ name: user.recenttracks['@attr'].user + ' (last song)', value: `- ${user.recenttracks.track[0].name} - ${user.recenttracks.track[0].artist['#text']}` },
+				// );
+
+				// descriptionString += `\n- <@${requestUsersId[index]}> (last song):\n[**${user.recenttracks.track[0].name}**](${user.recenttracks.track[0].url}) - **${user.recenttracks.track[0].artist['#text']}**`;
+
+				descriptionString += `\n### [**${user.recenttracks.track[0].name}**](${user.recenttracks.track[0].url}) - **${user.recenttracks.track[0].artist['#text']}**\n- <@${requestUsersId[index]}> (last song)\n`;
 			}
 
 			if (usersCounter == 25) {
@@ -79,6 +90,8 @@ module.exports = {
 			return;
 		}
 
+		songEmbed.setDescription(descriptionString);
+		// songEmbed.setFooter({text: `${usersCounter} users in total.`});
 		await interaction.editReply({ content: '', embeds: [songEmbed] });
 	},
 };
