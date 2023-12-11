@@ -23,6 +23,7 @@ client.Users = client.sequelize.define('users', {
 	},
 	lastfm: Sequelize.STRING,
 	locked: Sequelize.BOOLEAN,
+	listenbrainz: Sequelize.STRING,
 }, {
 	timestamps: false,
 });

@@ -20,6 +20,14 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 | `/lastfm top tracks` | Replies with user top tracks chart. |
 | `/lastfm profile` | Replies with user last.fm profile summary. |
 
+### Listenbrainz
+
+| command | description |
+| ----------- | ----------- |
+| `/listenbrainz nickname set` | Set or update your listenbrainz nickname. |
+| `/listenbrainz nickname remove` | Delete your listenbrainz nickname from bot database. |
+| `/listenbrainz np` | Replies with your now playing song. |
+
 ### Utility
 
 | command | description |
@@ -47,13 +55,18 @@ They require administrator privileges on the server
 ## Installation and setup
 
 1. Go to [Discord Developer Portal](https://discord.com/developers) and create new application with bot. Get here `APPLICATION ID` and `BOT TOKEN` and copy them to `.env.example` file.
-2. Discord bot permissions (WIP)
-3. For last.fm features you need to obtain their API key [here](https://www.last.fm/api/account/create).
+2. Discord bot permissions:
+
+	(WIP)
+
+3. For last.fm features you need to obtain their API key [here](https://www.last.fm/api/account/create). For Listenbrainz features you need your profile token from [here](https://listenbrainz.org/profile/).
 4. Clone repository and rename `.env.example` to `.env`
 
 	```sh
 	mv .env.example .env
 	```
+
+	Now insert all API keys and tokens into `.env` file. Some are optional, check comments inside file for more info.
 
 5. Run
 

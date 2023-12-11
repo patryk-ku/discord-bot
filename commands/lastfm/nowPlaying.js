@@ -18,6 +18,10 @@ module.exports = {
 		const userdata = await interaction.client.Users.findOne({ where: { user: user.id } });
 
 		if (userdata) {
+			if (!userdata.get('lastfm')) {
+				return interaction.editReply('Could not find user nickname in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database');
+			}
+
 			const fmlogin = userdata.get('lastfm');
 			await interaction.editReply(`Fetching data from last.fm for user: \`${fmlogin}\`...`);
 
@@ -62,6 +66,8 @@ module.exports = {
 				if (lastSong.recenttracks.track[0]['@attr'].nowplaying) {
 					songEmbed.setAuthor({ name: 'Now playing:', url: lastSong.recenttracks.track[0].url, iconURL: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.jpeg` });
 					// songEmbed.setTimestamp();
+					songEmbed.setFooter({ text: 'Last.fm' });
+					songEmbed.setTimestamp(new Date());
 				}
 			} else {
 				songEmbed.setAuthor({ name: 'Last song:', url: lastSong.recenttracks.track[0].url, iconURL: `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.jpeg` });
@@ -70,7 +76,7 @@ module.exports = {
 			await interaction.editReply({ content: '', embeds: [songEmbed] });
 
 		} else {
-			await interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database');
+			await interaction.editReply('Could not find user nickname in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database');
 			return;
 		}
 	},

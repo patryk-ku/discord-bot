@@ -178,14 +178,15 @@ module.exports = {
 						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						await interaction.editReply('Deleting your last.fm username from database...');
 
-						// deletes user from database
-						const rowCount = await interaction.client.Users.destroy({ where: { user: interaction.user.id } });
+						// deletes user nickname from database
+						const affectedRows = await interaction.client.Users.update({ lastfm: '' }, { where: { user: interaction.user.id } });
 
-						if (!rowCount) {
-							return interaction.editReply('That user doesn\'t exist in database.');
+						if (affectedRows > 0) {
+							return interaction.editReply('User deleted.');
 						}
 
-						return interaction.editReply('User deleted.');
+						return interaction.editReply('That user doesn\'t exist in database.');
+
 					}
 
 					case 'lock': {
@@ -599,8 +600,7 @@ module.exports = {
 									{ name: 'Artists', value: profile.user.artist_count, inline: true },
 								)
 								.setFooter({ text: 'Scrobbling since' })
-								.setTimestamp(new Date(profile.user.registered.unixtime * 1000))
-								;
+								.setTimestamp(new Date(profile.user.registered.unixtime * 1000));
 
 							if (profile.user.country) {
 								if (profile.user.country != 'None' && profile.user.country.length > 0) {
