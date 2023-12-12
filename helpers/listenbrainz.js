@@ -71,7 +71,7 @@ exports.getNowPlaying = async (user, nickname) => {
 	}
 
 	if (!nowPlaying.payload) {
-		return { error: 'No data for user.' };
+		return { error: `No data for ${user} (\`${nickname}\`)` };
 	}
 
 	if (nowPlaying.payload.count == 0) {

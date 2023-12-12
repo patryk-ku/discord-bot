@@ -3,6 +3,7 @@ const validator = require('validator');
 const Canvas = require('@napi-rs/canvas');
 const { request } = require('undici');
 require('dotenv').config();
+const Lastfm = require('../../helpers/lastfm');
 
 module.exports = {
 	data: new SlashCommandBuilder()
