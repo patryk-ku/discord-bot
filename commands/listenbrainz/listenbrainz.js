@@ -113,42 +113,10 @@ module.exports = {
 						}
 						const listenbrainzNickname = userData.get('listenbrainz');
 
-						// Get now playing song
-						const nowPlaying = await Listenbrainz.getNowPlaying(user, listenbrainzNickname);
-						if (nowPlaying.error) {
-							return interaction.editReply({ content: nowPlaying.error });
-						}
-
-						// Checking if mbid of release exists and downloading image
-						let coverArt;
-						if (nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid) {
-							// Fetching image
-							coverArt = await Listenbrainz.getCoverArt(nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid);
-						} else {
-							coverArt = { error: true };
-						}
-
-						const songEmbed = new EmbedBuilder()
-							.setColor(Listenbrainz.colors.orange)
-							// .setTitle(nowPlaying.payload.listens[0].track_metadata.track_name)
-							// .setTitle(`${nowPlaying.payload.listens[0].track_metadata.artist_name} - ${nowPlaying.payload.listens[0].track_metadata.track_name}`);
-							.setFooter({ text: 'Listenbrainz' })
-							.setTimestamp(new Date())
-							.addFields(
-								{ name: 'track', value: `**${nowPlaying.payload.listens[0].track_metadata.track_name}**`, inline: true },
-								{ name: 'artist', value: `**${nowPlaying.payload.listens[0].track_metadata.artist_name}**`, inline: true },
-							);
-
-						// Check if album cover url exists
-						if (!coverArt.error) {
-							songEmbed.setThumbnail(coverArt);
-						}
-
-						// todo: fix url when no mbid + playing_now != true
-						if (nowPlaying.payload.playing_now) {
-							songEmbed.setAuthor({ name: 'Now playing:', url: `https://musicbrainz.org/recording/${nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid}`, iconURL: user.avatarURL() });
-						} else {
-							songEmbed.setAuthor({ name: 'Last song:', url: `https://musicbrainz.org/recording/${nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid}`, iconURL: user.avatarURL() });
+						// Create now playing embed
+						const songEmbed = await Listenbrainz.embedNowPlaying(user, listenbrainzNickname);
+						if (songEmbed.error) {
+							return interaction.editReply({ content: songEmbed.error });
 						}
 
 						return interaction.editReply({ content: '', embeds: [songEmbed] });

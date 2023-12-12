@@ -1,3 +1,5 @@
+const { EmbedBuilder } = require('discord.js');
+
 exports.getCoverArt = async (mbid, size = 500) => {
 	let coverArt;
 
@@ -64,17 +66,16 @@ exports.getNowPlaying = async (user, nickname) => {
 		return { error: `Failed to fetch now playing data - \`${error}\`` };
 	}
 
-	// if (nowPlaying.error) {
-	// 	console.log(nowPlaying);
-	// 	return interaction.editReply('Unknown listenbrainz API error 🔥');
-	// }
+	if (nowPlaying.error) {
+		return { error: `Unknown error: \`${nowPlaying.error}\`` };
+	}
 
 	if (!nowPlaying.payload) {
 		return { error: 'No data for user.' };
 	}
 
 	if (nowPlaying.payload.count == 0) {
-		return { error: `${user} (\`${nickname}\`) is not listening to anything right now. 🔇` };
+		return { error: this.msg.notPlayingNow(user, nickname) };
 	}
 
 	// console.log(nowPlaying);
@@ -82,6 +83,47 @@ exports.getNowPlaying = async (user, nickname) => {
 	// console.log(nowPlaying.payload.listens[0].track_metadata.additional_info);
 
 	return nowPlaying;
+};
+
+exports.embedNowPlaying = async (user, nickname) => {
+	// Get now playing song
+	const nowPlaying = await this.getNowPlaying(user, nickname);
+	if (nowPlaying.error) {
+		return { error: nowPlaying.error };
+	}
+
+	// Checking if mbid of release exists and downloading image
+	let coverArt;
+	if (nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid) {
+		// Fetching image
+		coverArt = await this.getCoverArt(nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid);
+	} else {
+		coverArt = { error: true };
+	}
+
+	const embed = new EmbedBuilder()
+		.setColor(this.colors.orange)
+		// .setTitle(nowPlaying.payload.listens[0].track_metadata.track_name)
+		// .setTitle(`${nowPlaying.payload.listens[0].track_metadata.artist_name} - ${nowPlaying.payload.listens[0].track_metadata.track_name}`);
+		.setFooter({ text: 'Listenbrainz' })
+		.setTimestamp(new Date())
+		.addFields(
+			{ name: 'track', value: `**${nowPlaying.payload.listens[0].track_metadata.track_name}**`, inline: true },
+			{ name: 'artist', value: `**${nowPlaying.payload.listens[0].track_metadata.artist_name}**`, inline: true },
+		);
+
+	// Check if album cover url exists
+	if (!coverArt.error) {
+		embed.setThumbnail(coverArt);
+	}
+
+	if (nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid) {
+		embed.setAuthor({ name: 'Now playing:', url: `https://musicbrainz.org/recording/${nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid}`, iconURL: user.avatarURL() });
+	} else {
+		embed.setAuthor({ name: 'Now playing:', iconURL: user.avatarURL() });
+	}
+
+	return embed;
 };
 
 exports.colors = {
@@ -93,5 +135,8 @@ exports.colors = {
 exports.msg = {
 	missingUsername: (user) => {
 		return `Could not find ${user} listenbrainz nickname in a bot database. Use \`listenbrainz nickname set\` command to submit your nickname.`;
+	},
+	notPlayingNow: (user, nickname) => {
+		return `${user} (\`${nickname}\`) is not listening to anything right now. 🔇`;
 	},
 };
