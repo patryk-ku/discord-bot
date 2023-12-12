@@ -27,6 +27,7 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 | `/listenbrainz nickname set` | Set or update your listenbrainz nickname. |
 | `/listenbrainz nickname remove` | Delete your listenbrainz nickname from bot database. |
 | `/listenbrainz np` | Replies with your now playing song. |
+| `/listenbrainz cover` | Replies with high-res cover art of user now playing song (from listenbrainz). |
 
 ### Utility
 

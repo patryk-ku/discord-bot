@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const validator = require('validator');
 require('dotenv').config();
+const Listenbrainz = require('../../helpers/listenbrainz');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -26,6 +27,13 @@ module.exports = {
 			subcommand
 				.setName('np')
 				.setDescription('Replies with user now playing song (from listenbrainz).')
+				.addUserOption(option =>
+					option.setName('user')
+						.setDescription('The user (default you).')))
+		.addSubcommand(subcommand =>
+			subcommand
+				.setName('cover')
+				.setDescription('Replies with high-res cover art of user now playing song (from listenbrainz).')
 				.addUserOption(option =>
 					option.setName('user')
 						.setDescription('The user (default you).'))),
@@ -77,7 +85,6 @@ module.exports = {
 
 						if (affectedRows > 0) {
 							return interaction.editReply('Listenbrainz nickname deleted.');
-
 						}
 
 						return interaction.editReply('That user doesn\'t exist in database.');
@@ -96,84 +103,91 @@ module.exports = {
 						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						const user = interaction.options.getUser('user') ?? interaction.user;
 
-						const userdata = await interaction.client.Users.findOne({ where: { user: user.id } });
-
-						if (userdata) {
-							if (!userdata.get('listenbrainz')) {
-								return interaction.editReply(`Could not find ${user} listenbrainz nickname in a database. Use \`listenbrainz nickname set\` command to add your nickname to bot database.`);
-							}
-
-							const listenbrainzLogin = userdata.get('listenbrainz');
-
-							// await interaction.editReply(`Fetching data from listenbrainz for user: \`${fmlogin}\`...`);
-
-							const nowPlaying = await fetch(`https://api.listenbrainz.org/1/user/${listenbrainzLogin}/playing-now`, {
-								method: 'GET',
-								headers: {
-									'Authorization': `Token ${process.env.LISTENBRAINZ_TOKEN}`,
-								},
-							}).then((res) => res.json()).catch(error => { return error; });
-
-							if (nowPlaying.error) {
-								console.log(nowPlaying);
-								return interaction.editReply('Unknown listenbrainz API error 🔥');
-							}
-
-							if (!nowPlaying.payload) {
-								return interaction.editReply('Unknown error for user');
-							}
-
-							if (nowPlaying.payload.count == 0) {
-								return interaction.editReply(`${user} (\`${listenbrainzLogin}\`) is not listening to anything right now. 🔇`);
-							}
-
-							console.log(nowPlaying);
-							console.log(nowPlaying.payload.listens);
-							console.log(nowPlaying.payload.listens[0].track_metadata.additional_info);
-
-							// await interaction.editReply('Creating and sending message...');
-
-							let artwork;
-							if (nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid) {
-								artwork = await fetch(`http://coverartarchive.org/release/${nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid}/front-500`).then((res) => res.url).catch(error => { return error; });
-
-								console.log(artwork);
-							} else {
-								artwork = { error: true };
-								console.log('No mbid');
-							}
-
-							const songEmbed = new EmbedBuilder()
-								// .setColor(0x362e6e)
-								// .setColor(0xbf458e)
-								.setColor(0xf07543)
-								// .setTitle(nowPlaying.payload.listens[0].track_metadata.track_name)
-								// .setTitle(`${nowPlaying.payload.listens[0].track_metadata.artist_name} - ${nowPlaying.payload.listens[0].track_metadata.track_name}`);
-								.setFooter({ text: 'Listenbrainz' })
-								.setTimestamp(new Date())
-								.addFields(
-									{ name: 'track', value: `**${nowPlaying.payload.listens[0].track_metadata.track_name}**`, inline: true },
-									{ name: 'artist', value: `**${nowPlaying.payload.listens[0].track_metadata.artist_name}**`, inline: true },
-									// { name: 'album:', value: '', inline: true },
-								);
-
-							// Check if album cover url exists
-							if (!artwork.error) {
-								songEmbed.setThumbnail(artwork);
-							}
-
-							// todo: fix url when no mbid
-							if (nowPlaying.payload.playing_now) {
-								songEmbed.setAuthor({ name: 'Now playing:', url: `https://musicbrainz.org/recording/${nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid}`, iconURL: user.avatarURL() });
-							} else {
-								songEmbed.setAuthor({ name: 'Last song:', url: `https://musicbrainz.org/recording/${nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid}`, iconURL: user.avatarURL() });
-							}
-
-							return interaction.editReply({ content: '', embeds: [songEmbed] });
-
-						} else {
-							return interaction.editReply(`Could not find ${user} in a database. Use \`listenbrainz nickname set\` command to add your listenbrainz nickname to bot database.`);
+						// Get user nickname from bot database
+						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						if (!userData) {
+							return interaction.editReply(Listenbrainz.msg.missingUsername(user));
 						}
+						if (!userData.get('listenbrainz')) {
+							return interaction.editReply(Listenbrainz.msg.missingUsername(user));
+						}
+						const listenbrainzNickname = userData.get('listenbrainz');
+
+						// Get now playing song
+						const nowPlaying = await Listenbrainz.getNowPlaying(user, listenbrainzNickname);
+						if (nowPlaying.error) {
+							return interaction.editReply({ content: nowPlaying.error });
+						}
+
+						// Checking if mbid of release exists and downloading image
+						let coverArt;
+						if (nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid) {
+							// Fetching image
+							coverArt = await Listenbrainz.getCoverArt(nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid);
+						} else {
+							coverArt = { error: true };
+						}
+
+						const songEmbed = new EmbedBuilder()
+							.setColor(Listenbrainz.colors.orange)
+							// .setTitle(nowPlaying.payload.listens[0].track_metadata.track_name)
+							// .setTitle(`${nowPlaying.payload.listens[0].track_metadata.artist_name} - ${nowPlaying.payload.listens[0].track_metadata.track_name}`);
+							.setFooter({ text: 'Listenbrainz' })
+							.setTimestamp(new Date())
+							.addFields(
+								{ name: 'track', value: `**${nowPlaying.payload.listens[0].track_metadata.track_name}**`, inline: true },
+								{ name: 'artist', value: `**${nowPlaying.payload.listens[0].track_metadata.artist_name}**`, inline: true },
+							);
+
+						// Check if album cover url exists
+						if (!coverArt.error) {
+							songEmbed.setThumbnail(coverArt);
+						}
+
+						// todo: fix url when no mbid + playing_now != true
+						if (nowPlaying.payload.playing_now) {
+							songEmbed.setAuthor({ name: 'Now playing:', url: `https://musicbrainz.org/recording/${nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid}`, iconURL: user.avatarURL() });
+						} else {
+							songEmbed.setAuthor({ name: 'Last song:', url: `https://musicbrainz.org/recording/${nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid}`, iconURL: user.avatarURL() });
+						}
+
+						return interaction.editReply({ content: '', embeds: [songEmbed] });
+					}
+
+					case 'cover': {
+						await interaction.deferReply();
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						const user = interaction.options.getUser('user') ?? interaction.user;
+
+						// Get user nickname from bot database
+						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						if (!userData) {
+							return interaction.editReply(Listenbrainz.msg.missingUsername(user));
+						}
+						if (!userData.get('listenbrainz')) {
+							return interaction.editReply(Listenbrainz.msg.missingUsername(user));
+						}
+						const listenbrainzNickname = userData.get('listenbrainz');
+
+						// Get now playing song
+						const nowPlaying = await Listenbrainz.getNowPlaying(user, listenbrainzNickname);
+						if (nowPlaying.error) {
+							return interaction.editReply({ content: nowPlaying.error });
+						}
+
+						// Checking if mbid of release exists
+						if (!nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid) {
+							return interaction.editReply({ content: 'The `mbid` of this track is missing in MusicBrainz database. Unable to fetch cover art image for this release.' });
+						}
+						const mbid = nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid;
+
+						// Fetching image
+						const coverArt = await Listenbrainz.getCoverArt(mbid, 9999);
+						if (coverArt.error) {
+							return interaction.editReply({ content: coverArt.error });
+						}
+
+						return interaction.editReply({ content: coverArt });
 					}
 
 					default: {
