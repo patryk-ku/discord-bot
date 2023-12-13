@@ -91,7 +91,7 @@ module.exports = {
 		if (interaction.options.getString('compression') && fileSize > 8) {
 			try {
 				await interaction.editReply('Reducing file size...');
-				const { error, stdout, stderr } = await execPromise(`ffmpeg -i ${filePath} -vcodec h264 -b:v ${interaction.options.getString('compression')} -acodec mp3 ./tmpfiles/${name}_compressed.mp4`);
+				const { error, stdout, stderr } = await execPromise(`ffmpeg -i ${filePath} -vcodec libx264 -b:v ${interaction.options.getString('compression')} -acodec aac ./tmpfiles/${name}_compressed.mp4`);
 				if (error) {
 					console.log(error);
 				}
