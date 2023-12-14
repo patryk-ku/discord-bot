@@ -454,6 +454,17 @@ module.exports = {
 							return interaction.editReply({ content: albums.error });
 						}
 
+						let rangeString = '';
+						if (range == '7day') {
+							rangeString = 'week';
+						} else if (range == '1month') {
+							rangeString = 'month';
+						} else if (range == '12month') {
+							rangeString = 'year';
+						} else if (range == 'overall') {
+							rangeString = 'all time';
+						}
+
 						if (!process.env.TERMUX) {
 
 							// Create canvas image
@@ -481,19 +492,8 @@ module.exports = {
 								}
 							}
 
-							let rangeString = '';
-							if (range == '7day') {
-								rangeString = 'week';
-							} else if (range == '1month') {
-								rangeString = 'month';
-							} else if (range == '12month') {
-								rangeString = 'year';
-							} else if (range == 'overall') {
-								rangeString = 'all time';
-							}
-
 							const attachment = new AttachmentBuilder(await canvas.encode('jpeg'), { name: 'collage.jpeg' });
-							return interaction.editReply({ content: `## \`${lastfmNickname}\` top albums of the ${rangeString}:`, files: [attachment] });
+							return interaction.editReply({ content: `##  ${user} top albums of the ${rangeString}:`, files: [attachment] });
 						}
 
 						// Termux fix
@@ -543,7 +543,7 @@ module.exports = {
 						// Uploading file to discord
 						try {
 							const attachment = new AttachmentBuilder(filePaths.at(-1));
-							await interaction.editReply({ content: 'collage: ', files: [attachment] });
+							await interaction.editReply({ content: `##  ${user} top albums of the ${rangeString}:`, files: [attachment] });
 							console.log('File sent.');
 						} catch (error) {
 							console.log(error);
