@@ -9,7 +9,7 @@
     "deploy-commands": "node ./scripts/deploy-commands.js",
     "deploy-global-commands": "node ./scripts/deploy-global-commands.js",
     "reset-commands": "node ./scripts/reset-commands.js",
-    "termux-debug": "nohup node index.js >> ../output.log &; disown; tail -f ../output.log"
+    "termux-debug": "nohup node index.js >> ../output.log && disown && tail -f ../output.log"
   },
   "keywords": [],
   "author": "",
