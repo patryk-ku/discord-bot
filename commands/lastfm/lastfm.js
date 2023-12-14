@@ -1,9 +1,19 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const validator = require('validator');
-const Canvas = require('@napi-rs/canvas');
 const { request } = require('undici');
 require('dotenv').config();
 const Lastfm = require('../../helpers/lastfm');
+const helperFunctions = require('../../helpers/functions');
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+const fs = require('fs');
+
+// Termux fix
+let Canvas;
+if (!process.env.TERMUX) {
+	Canvas = require('@napi-rs/canvas');
+}
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -428,38 +438,30 @@ module.exports = {
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						const range = interaction.options.getString('range');
 
+						// Get user nickname from bot database
 						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
-						if (userData) {
-							const lastfmLogin = userData.get('lastfm');
+						if (!userData) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
+						}
+						if (!userData.get('lastfm')) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
+						}
+						const lastfmNickname = userData.get('lastfm');
 
-							const albums = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettopalbums&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=9&period=${range}`).then((res) => res.json()).catch(error => { return error; });
+						// Get top albums
+						const albums = await Lastfm.getTopAlbums(user, lastfmNickname, range, 9);
+						if (albums.error) {
+							return interaction.editReply({ content: albums.error });
+						}
 
-							if (albums.error) {
-								if (albums.error == 6) {
-									await interaction.editReply(`Last.fm error response: User \`${lastfmLogin}\` not found 💀`);
-								} else {
-									await interaction.editReply('Unknown Last.fm API error 🔥');
-								}
-								return;
-							}
+						if (!process.env.TERMUX) {
 
-							if (!albums.topalbums) {
-								return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							if (!albums.topalbums.album[0]) {
-								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							if (albums.topalbums.album == 0) {
-								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
-							}
-
+							// Create canvas image
 							const canvas = Canvas.createCanvas(900, 900);
 							const context = canvas.getContext('2d');
 
 							let x = 0, y = 0;
-							for (const album of albums.topalbums.album) {
+							for (const album of albums.album) {
 
 								// console.log(album.image[3]['#text']);
 								// console.log(`${x}:${y}`);
@@ -491,12 +493,69 @@ module.exports = {
 							}
 
 							const attachment = new AttachmentBuilder(await canvas.encode('jpeg'), { name: 'collage.jpeg' });
-							return interaction.editReply({ content: `## \`${lastfmLogin}\` top albums of the ${rangeString}:`, files: [attachment] });
-
-
-						} else {
-							return interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');
+							return interaction.editReply({ content: `## \`${lastfmNickname}\` top albums of the ${rangeString}:`, files: [attachment] });
 						}
+
+						// Termux fix
+						const fileId = String(Date.now());
+						const requests = [];
+						const filePaths = [];
+
+						// Async download all covers
+						for (const [index, album] of albums.album.entries()) {
+							console.log(`Downloading: ${album.image[3]['#text']}`);
+							if (album.image[3]['#text'].length > 0) {
+								const fileName = `./tmpfiles/${fileId}-${index}.jpg`;
+								filePaths.push(fileName);
+								const coverArt = helperFunctions.downloadFile(album.image[3]['#text'], fileName);
+								requests.push(coverArt);
+							}
+						}
+
+						try {
+							const response = await Promise.all(requests);
+							console.log('All files downloaded.');
+						} catch (error) {
+							// todo: delete tmp files here too
+							return interaction.editReply({ content: 'Failed to download one or more images from Last.fm servers.' });
+						}
+
+						// Use python script to create collage
+						try {
+							const { error, stdout, stderr } = await execPromise(`python ./helpers/collage.py ${fileId}`);
+							if (error) {
+								console.log(error);
+							}
+							if (stderr) {
+								console.log(stderr);
+							}
+							console.log(stdout);
+						} catch (error) {
+							console.log(`error: ${error}`);
+							return interaction.editReply(`Failed to create collage - \`${error}\``);
+						}
+
+						// todo: check here if file exists
+
+						filePaths.push(`./tmpfiles/${fileId}-collage.jpg`);
+						console.log('Collage is ready.');
+
+						// Uploading file to discord
+						try {
+							const attachment = new AttachmentBuilder(filePaths.at(-1));
+							await interaction.editReply({ content: 'collage: ', files: [attachment] });
+							console.log('File sent.');
+						} catch (error) {
+							console.log(error);
+							await interaction.editReply('Error, failed to upload video to discord servers.');
+						}
+
+						// Deleting tmp files
+						for (const file of filePaths) {
+							helperFunctions.deleteFile(file);
+						}
+
+						return;
 					}
 
 					case 'recent': {
