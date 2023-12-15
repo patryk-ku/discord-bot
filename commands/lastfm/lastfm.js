@@ -470,6 +470,7 @@ module.exports = {
 							// Create canvas image
 							const canvas = Canvas.createCanvas(900, 900);
 							const context = canvas.getContext('2d');
+							let missingCounter = 9;
 
 							let x = 0, y = 0;
 							for (const album of albums.album) {
@@ -481,6 +482,7 @@ module.exports = {
 									const { body } = await request(album.image[3]['#text']);
 									const cover = await Canvas.loadImage(await body.arrayBuffer());
 									context.drawImage(cover, x, y, 300, 300);
+									missingCounter--;
 								} else {
 									// context.fillRect(x, y, 300, 300);
 								}
@@ -492,23 +494,31 @@ module.exports = {
 								}
 							}
 
+							let collageString = `##  ${user} top albums of the ${rangeString}:`;
+
+							if (missingCounter > 0) {
+								collageString += `\n*Missing covers: ${missingCounter}*`;
+							}
+
 							const attachment = new AttachmentBuilder(await canvas.encode('jpeg'), { name: 'collage.jpeg' });
-							return interaction.editReply({ content: `##  ${user} top albums of the ${rangeString}:`, files: [attachment] });
+							return interaction.editReply({ content: collageString, files: [attachment] });
 						}
 
 						// Termux fix
 						const fileId = String(Date.now());
 						const requests = [];
 						const filePaths = [];
+						let missingCounter = 9;
 
 						// Async download all covers
 						for (const [index, album] of albums.album.entries()) {
-							console.log(`Downloading: ${album.image[3]['#text']}`);
 							if (album.image[3]['#text'].length > 0) {
+								console.log(`Downloading: ${album.image[3]['#text']}`);
 								const fileName = `./tmpfiles/${fileId}-${index}.jpg`;
 								filePaths.push(fileName);
 								const coverArt = helperFunctions.downloadFile(album.image[3]['#text'], fileName);
 								requests.push(coverArt);
+								missingCounter--;
 							}
 						}
 
@@ -517,7 +527,7 @@ module.exports = {
 							console.log('All files downloaded.');
 						} catch (error) {
 							// todo: delete tmp files here too
-							return interaction.editReply({ content: 'Failed to download one or more images from Last.fm servers.' });
+							return interaction.editReply({ content: 'Failed to download one or more images from Last.fm servers, try again.' });
 						}
 
 						// Use python script to create collage
@@ -541,9 +551,15 @@ module.exports = {
 						console.log('Collage is ready.');
 
 						// Uploading file to discord
+						let collageString = `##  ${user} top albums of the ${rangeString}:`;
+
+						if (missingCounter > 0) {
+							collageString += `\n*Missing covers: ${missingCounter}*`;
+						}
+
 						try {
 							const attachment = new AttachmentBuilder(filePaths.at(-1));
-							await interaction.editReply({ content: `##  ${user} top albums of the ${rangeString}:`, files: [attachment] });
+							await interaction.editReply({ content: collageString, files: [attachment] });
 							console.log('File sent.');
 						} catch (error) {
 							console.log(error);
