@@ -8,7 +8,8 @@ module.exports = {
 		.setDescription('Replies with user now playing song!')
 		.addUserOption(option =>
 			option.setName('user')
-				.setDescription('The user (default you).')),
+				.setDescription('The user (default you).'))
+		.setDMPermission(true),
 	async execute(interaction) {
 		await interaction.deferReply();
 		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);

@@ -1,4 +1,9 @@
 const { SlashCommandBuilder } = require('discord.js');
+require('dotenv').config();
+const { exec } = require('child_process');
+const util = require('util');
+const execPromise = util.promisify(exec);
+const helperFunctions = require('../../helpers/functions');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -14,29 +19,65 @@ module.exports = {
 			subcommand
 				.setName('server')
 				.setDescription('Debug info about the server.'))
+		.addSubcommand(subcommand =>
+			subcommand
+				.setName('termux')
+				.setDescription('Debug info about the Termux instance (if in use).'))
 		.setDefaultMemberPermissions(0)
 		.setDMPermission(false),
 	async execute(interaction) {
-		const subcommand = interaction.options.getSubcommand();
+		switch (interaction.options.getSubcommand()) {
+			case 'user': {
+				// interaction.user is the object representing the User who ran the command
+				// interaction.member is the GuildMember object, which represents the user in the specific guild
+				await interaction.reply(`This command was run by ${interaction.user.username}, who joined on ${interaction.member.joinedAt}.`);
+				console.log(interaction.user);
+				console.log(interaction);
+				// await interaction.channel.send('dummy message');
+				return;
+			}
 
-		if (subcommand === 'user') {
+			case 'server': {
+				await interaction.reply(`This server is ${interaction.guild.name} and has ${interaction.guild.memberCount} members.`);
+				console.log(interaction.guild.members);
 
-			// interaction.user is the object representing the User who ran the command
-			// interaction.member is the GuildMember object, which represents the user in the specific guild
-			await interaction.reply(`This command was run by ${interaction.user.username}, who joined on ${interaction.member.joinedAt}.`);
-			console.log(interaction.user);
-			console.log(interaction);
-			// await interaction.channel.send('dummy message');
+				// const users = await interaction.guild.members.fetch();
+				// console.log(users);
+				return;
+			}
 
-		} else if (subcommand === 'server') {
+			case 'termux': {
+				await interaction.deferReply();
 
-			await interaction.reply(`This server is ${interaction.guild.name} and has ${interaction.guild.memberCount} members.`);
-			console.log(interaction.guild.members);
+				if (!process.env.TERMUX) {
+					return interaction.editReply('Termux compatibility is disabled in config.');
+				}
 
-			// const users = await interaction.guild.members.fetch();
-			// console.log(users);
-		} else {
-			await interaction.reply('Error: missing subcommand.');
+				try {
+					const { error, stdout, stderr } = await execPromise('termux-battery-status');
+					if (error) {
+						console.log(error);
+					}
+					if (stderr) {
+						console.log(stderr);
+					}
+					console.log(stdout);
+					console.log(stdout.json());
+				} catch (error) {
+					console.log(`error: ${error}`);
+					return interaction.editReply('Failed to show Termux info.');
+				}
+
+				return;
+			}
+
+			default: {
+				return interaction.reply({ content: 'Error: Missing subcommand.', ephemeral: true });
+			}
 		}
+
+
+
+
 	},
 };

@@ -34,7 +34,8 @@ module.exports = {
 					subcommand
 						.setName('users')
 						.setDescription('List all last.fm users from this server.')))
-		.setDefaultMemberPermissions(0),
+		.setDefaultMemberPermissions(0)
+		.setDMPermission(false),
 	async execute(interaction) {
 
 		switch (interaction.options.getSubcommandGroup()) {

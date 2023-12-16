@@ -36,7 +36,8 @@ module.exports = {
 				.setDescription('Replies with high-res cover art of user now playing song (from listenbrainz).')
 				.addUserOption(option =>
 					option.setName('user')
-						.setDescription('The user (default you).'))),
+						.setDescription('The user (default you).')))
+		.setDMPermission(true),
 	async execute(interaction) {
 
 		if (!process.env.LISTENBRAINZ_TOKEN) {

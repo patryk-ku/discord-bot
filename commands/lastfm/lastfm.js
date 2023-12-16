@@ -147,7 +147,8 @@ module.exports = {
 				.setDescription('Replies with user last.fm profile summary.')
 				.addUserOption(option =>
 					option.setName('user')
-						.setDescription('The user (default you).'))),
+						.setDescription('The user (default you).')))
+		.setDMPermission(true),
 	async execute(interaction) {
 
 		switch (interaction.options.getSubcommandGroup()) {

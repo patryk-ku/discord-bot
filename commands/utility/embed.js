@@ -23,7 +23,8 @@ module.exports = {
 					{ name: 'Medium', value: '1000k' },
 					{ name: 'High', value: '700k' },
 					{ name: 'Minecraft', value: '300k' },
-				)),
+				))
+		.setDMPermission(false),
 	async execute(interaction) {
 		await interaction.deferReply();
 		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
