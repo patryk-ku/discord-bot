@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const { exec } = require('child_process');
 const util = require('util');
 const validator = require('validator');
+const helperFunctions = require('../../helpers/functions');
 // promisify exec:
 const execPromise = util.promisify(exec);
 
@@ -106,6 +107,7 @@ module.exports = {
 			} catch (error) {
 				console.log(`error: ${error.message}`);
 				interaction.editReply(`\`${url}\` - Error: compression failed (╥﹏╥)`);
+				helperFunctions.deleteFile(filePath);
 				return;
 			}
 		}
@@ -115,7 +117,6 @@ module.exports = {
 		if (fileSize2 > 8) {
 			await interaction.editReply(`\`${url}\` - Error: File still too large (${fileSize2.toFixed(2)}MB / 8MB).`);
 		} else {
-
 			// Uploading file to discord
 			const file = new AttachmentBuilder(filePath);
 			try {
@@ -130,21 +131,8 @@ module.exports = {
 
 		}
 
-		// Deleting file
-		fs.unlink(filePath, function (err) {
-			if (err) {
-				console.log(err);
-			}
-			console.log(`File ${filePath} deleted successfully`);
-		});
-
-		if (interaction.options.getString('compression')) {
-			fs.unlink(filePath2, function (err) {
-				if (err) {
-					console.log(err);
-				}
-				console.log(`File ${filePath2} deleted successfully`);
-			});
-		}
+		// Deleting tmp file(s)
+		helperFunctions.deleteMultipleFiles([filePath, filePath2]);
+		return;
 	},
 };

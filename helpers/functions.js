@@ -33,10 +33,33 @@ exports.downloadFile = async (url, path, retry = false) => {
 };
 
 exports.deleteFile = async (path) => {
+	if (typeof path !== 'string') {
+		console.log('Error while deleting file: given path is not a string.');
+		return;
+	}
+
+	if (path.length == 0) {
+		console.log('Error while deleting file: path cannot be empty.');
+		return;
+	}
+
+	try {
+		await fs.access(path, fs.constants.F_OK);
+	} catch (error) {
+		console.log(`File don't exists: ${path}`);
+		return;
+	}
+
 	try {
 		await fs.unlink(path);
-		console.log(`Deleted file: ${path}.`);
-	} catch (err) {
-		console.error(err);
+		console.log(`Deleted file: ${path}`);
+	} catch (error) {
+		console.error(`Error while deleting file: ${path}. Error code: ${error}`);
+	}
+};
+
+exports.deleteMultipleFiles = (paths) => {
+	for (const path of paths) {
+		this.deleteFile(path);
 	}
 };

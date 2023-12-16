@@ -7,7 +7,6 @@ const helperFunctions = require('../../helpers/functions');
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
-const fs = require('fs');
 
 // Termux fix
 let Canvas;
@@ -474,17 +473,11 @@ module.exports = {
 
 							let x = 0, y = 0;
 							for (const album of albums.album) {
-
-								// console.log(album.image[3]['#text']);
-								// console.log(`${x}:${y}`);
-
 								if (album.image[3]['#text'].length > 0) {
 									const { body } = await request(album.image[3]['#text']);
 									const cover = await Canvas.loadImage(await body.arrayBuffer());
 									context.drawImage(cover, x, y, 300, 300);
 									missingCounter--;
-								} else {
-									// context.fillRect(x, y, 300, 300);
 								}
 
 								x += 300;
@@ -523,11 +516,11 @@ module.exports = {
 						}
 
 						try {
-							const response = await Promise.all(requests);
+							await Promise.all(requests);
 							console.log('All files downloaded.');
 						} catch (error) {
-							// todo: delete tmp files here too
-							return interaction.editReply({ content: 'Failed to download one or more images from Last.fm servers, try again.' });
+							helperFunctions.deleteMultipleFiles(filePaths);
+							return interaction.editReply({ content: 'Failed to download one or more images from Last.fm servers, try again later.' });
 						}
 
 						// Use python script to create collage
@@ -542,6 +535,7 @@ module.exports = {
 							console.log(stdout);
 						} catch (error) {
 							console.log(`error: ${error}`);
+							helperFunctions.deleteMultipleFiles(filePaths);
 							return interaction.editReply(`Failed to create collage - \`${error}\``);
 						}
 
@@ -567,10 +561,7 @@ module.exports = {
 						}
 
 						// Deleting tmp files
-						for (const file of filePaths) {
-							helperFunctions.deleteFile(file);
-						}
-
+						helperFunctions.deleteMultipleFiles(filePaths);
 						return;
 					}
 
