@@ -53,6 +53,7 @@ module.exports = {
 					return interaction.editReply('Termux compatibility is disabled in config.');
 				}
 
+				let info;
 				try {
 					const { error, stdout, stderr } = await execPromise('termux-battery-status');
 					if (error) {
@@ -62,22 +63,19 @@ module.exports = {
 						console.log(stderr);
 					}
 					console.log(stdout);
-					console.log(stdout.json());
+					info = JSON.parse(stdout);
+
 				} catch (error) {
 					console.log(`error: ${error}`);
 					return interaction.editReply('Failed to show Termux info.');
 				}
 
-				return;
+				return interaction.editReply(`## Battery: ${info.percentage}%, temperature: ${Number(info.temperature).toFixed(2)}, ${info.plugged}, ${info.status}.`);
 			}
 
 			default: {
 				return interaction.reply({ content: 'Error: Missing subcommand.', ephemeral: true });
 			}
 		}
-
-
-
-
 	},
 };
