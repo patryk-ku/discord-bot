@@ -87,6 +87,21 @@ module.exports = {
 					console.log(`error: ${error}`);
 				}
 
+				let ram = '';
+				try {
+					const { error, stdout, stderr } = await execPromise(`free -m --si | awk 'FNR == 2 {print $3" MB / "$2" MB"}'`);
+					if (error) {
+						console.log(error);
+					}
+					if (stderr) {
+						console.log(stderr);
+					}
+					console.log(stdout);
+					infoString += `### RAM └ ${stdout}\n`;
+				} catch (error) {
+					console.log(`error: ${error}`);
+				}
+
 				if (infoString == '') {
 					return interaction.editReply('Failed to show any Termux info.');
 				}
