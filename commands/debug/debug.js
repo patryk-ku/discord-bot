@@ -52,7 +52,8 @@ module.exports = {
 					return interaction.editReply('Termux compatibility is disabled in config.');
 				}
 
-				let info;
+				let infoString = '';
+				let battery = '';
 				try {
 					const { error, stdout, stderr } = await execPromise('termux-battery-status');
 					if (error) {
@@ -62,14 +63,35 @@ module.exports = {
 						console.log(stderr);
 					}
 					console.log(stdout);
-					info = JSON.parse(stdout);
-
+					battery = JSON.parse(stdout);
+					infoString += `### Battery \n├ **${battery.percentage}%**\n├ ${Number(battery.temperature).toFixed(1)} °C\n├ ${battery.plugged}\n└ ${battery.status}\n`;
 				} catch (error) {
 					console.log(`error: ${error}`);
-					return interaction.editReply('Failed to show Termux info.');
+					// return interaction.editReply('Failed to show Termux info.');
 				}
 
-				return interaction.editReply(`## Battery: ${info.percentage}%, temperature: ${Number(info.temperature).toFixed(2)}, ${info.plugged}, ${info.status}.`);
+				let uptime = '';
+				try {
+					const { error, stdout, stderr } = await execPromise('uptime -p');
+					if (error) {
+						console.log(error);
+					}
+					if (stderr) {
+						console.log(stderr);
+					}
+					console.log(stdout);
+					uptime = stdout.split(',');
+					uptime[0] = uptime[0].slice(2);
+					infoString += `### Uptime \n├ ${uptime[0]}\n├ ${uptime[1]}\n└ ${uptime[2]}\n`;
+				} catch (error) {
+					console.log(`error: ${error}`);
+				}
+
+				if (infoString == '') {
+					return interaction.editReply('Failed to show any Termux info.');
+				}
+
+				return interaction.editReply(infoString);
 			}
 
 			default: {
