@@ -82,7 +82,7 @@ module.exports = {
 					console.log(stdout);
 					uptime = stdout.split(',');
 					uptime[0] = uptime[0].slice(2);
-					infoString += `### Uptime \n├ ${uptime[0]}\n├ ${uptime[1]}\n└ ${uptime[2]}\n`;
+					infoString += `### Uptime \n├${uptime[0]}\n├${uptime[1]}\n└${uptime[2]}\n`;
 				} catch (error) {
 					console.log(`error: ${error}`);
 				}
@@ -97,7 +97,7 @@ module.exports = {
 						console.log(stderr);
 					}
 					console.log(stdout);
-					infoString += `### RAM └ ${stdout}\n`;
+					infoString += `### RAM\n└ ${stdout}\n`;
 				} catch (error) {
 					console.log(`error: ${error}`);
 				}
