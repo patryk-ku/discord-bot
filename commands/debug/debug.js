@@ -82,7 +82,7 @@ module.exports = {
 					console.log(stdout);
 					uptime = stdout.split(',');
 					uptime[0] = uptime[0].slice(2);
-					infoString += `### Uptime \n├${uptime[0]}\n├${uptime[1]}\n└${uptime[2]}\n`;
+					infoString += `### Uptime \n├${uptime[0]}\n├${uptime[1]}\n└${uptime[2]}`;
 				} catch (error) {
 					console.log(`error: ${error}`);
 				}
