@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-// const validator = require('validator');
 require('dotenv').config();
 const Sequelize = require('sequelize');
+const Lastfm = require('../../helpers/lastfm');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -12,6 +12,10 @@ module.exports = {
 				.setDescription('If the user isn\'t listening to anything right now, show their last song instead.'))
 		.setDMPermission(false),
 	async execute(interaction) {
+		if (!process.env.LASTFM_API_KEY) {
+			return interaction.reply(Lastfm.msg.apiDisabled());
+		}
+
 		await interaction.deferReply();
 		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 		const recent = interaction.options.getBoolean('recent');

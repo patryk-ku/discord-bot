@@ -150,6 +150,9 @@ module.exports = {
 						.setDescription('The user (default you).')))
 		.setDMPermission(true),
 	async execute(interaction) {
+		if (!process.env.LASTFM_API_KEY) {
+			return interaction.reply(Lastfm.msg.apiDisabled());
+		}
 
 		switch (interaction.options.getSubcommandGroup()) {
 			case 'nickname': {
@@ -231,63 +234,35 @@ module.exports = {
 						const range = interaction.options.getString('range');
 						const amount = interaction.options.getInteger('amount') ?? 10;
 
+						// Get user nickname from bot database
 						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
-						if (userData) {
-							const lastfmLogin = userData.get('lastfm');
-
-							const artists = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${amount}&period=${range}`).then((res) => res.json()).catch(error => { return error; });
-
-							if (artists.error) {
-								if (artists.error == 6) {
-									await interaction.editReply(`Last.fm error response: User \`${lastfmLogin}\` not found 💀`);
-								} else {
-									await interaction.editReply('Unknown Last.fm API error 🔥');
-								}
-								return;
-							}
-
-							if (!artists.topartists) {
-								return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							if (!artists.topartists.artist[0]) {
-								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							if (artists.topartists.artist == 0) {
-								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							let rangeString = '';
-							if (range == '7day') {
-								rangeString = 'week';
-							} else if (range == '1month') {
-								rangeString = 'month';
-							} else if (range == '12month') {
-								rangeString = 'year';
-							} else if (range == 'overall') {
-								rangeString = 'all time';
-							}
-
-							const artistEmbed = new EmbedBuilder()
-								.setColor(0xC3000D)
-								.setAuthor({ name: `${user.username} top artists of the ${rangeString}:`, iconURL: user.avatarURL() })
-								.setFooter({ text: `total ${artists.topartists['@attr'].total} artist played (${rangeString})` });
-
-							let descriptionString = '';
-
-							for (const [index, artist] of artists.topartists.artist.entries()) {
-								descriptionString += `\n${index + 1}. [**${artist.name}**](${artist.url}) - **${artist.playcount}** *plays*`;
-							}
-
-							artistEmbed.setDescription(descriptionString);
-
-							return interaction.editReply({ content: '', embeds: [artistEmbed] });
-
-
-						} else {
-							return interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');
+						if (!userData) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
 						}
+						if (!userData.get('lastfm')) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
+						}
+						const lastfmNickname = userData.get('lastfm');
+
+						// Get top artists
+						const artists = await Lastfm.getTopArtists(user, lastfmNickname, range, amount);
+						if (artists.error) {
+							return interaction.editReply({ content: artists.error });
+						}
+
+						const rangeString = Lastfm.str.range(range);
+						const artistEmbed = new EmbedBuilder()
+							.setColor(0xC3000D)
+							.setAuthor({ name: `${user.username} top artists of the ${rangeString}:`, iconURL: user.avatarURL() })
+							.setFooter({ text: `total ${artists['@attr'].total} artist played (${rangeString})` });
+
+						let descriptionString = '';
+						for (const [index, artist] of artists.artist.entries()) {
+							descriptionString += `\n${index + 1}. [**${artist.name}**](${artist.url}) - **${artist.playcount}** *plays*`;
+						}
+						artistEmbed.setDescription(descriptionString);
+
+						return interaction.editReply({ content: '', embeds: [artistEmbed] });
 					}
 
 					case 'albums': {
@@ -298,63 +273,35 @@ module.exports = {
 						const range = interaction.options.getString('range');
 						const amount = interaction.options.getInteger('amount') ?? 10;
 
+						// Get user nickname from bot database
 						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
-						if (userData) {
-							const lastfmLogin = userData.get('lastfm');
-
-							const albums = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettopalbums&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${amount}&period=${range}`).then((res) => res.json()).catch(error => { return error; });
-
-							if (albums.error) {
-								if (albums.error == 6) {
-									await interaction.editReply(`Last.fm error response: User \`${lastfmLogin}\` not found 💀`);
-								} else {
-									await interaction.editReply('Unknown Last.fm API error 🔥');
-								}
-								return;
-							}
-
-							if (!albums.topalbums) {
-								return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							if (!albums.topalbums.album[0]) {
-								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							if (albums.topalbums.album == 0) {
-								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							let rangeString = '';
-							if (range == '7day') {
-								rangeString = 'week';
-							} else if (range == '1month') {
-								rangeString = 'month';
-							} else if (range == '12month') {
-								rangeString = 'year';
-							} else if (range == 'overall') {
-								rangeString = 'all time';
-							}
-
-							const albumEmbed = new EmbedBuilder()
-								.setColor(0xC3000D)
-								.setAuthor({ name: `${user.username} top albums of the ${rangeString}:`, iconURL: user.avatarURL() })
-								.setFooter({ text: `total ${albums.topalbums['@attr'].total} albums played (${rangeString})` });
-
-							let descriptionString = '';
-
-							for (const [index, album] of albums.topalbums.album.entries()) {
-								descriptionString += `\n${index + 1}. **${album.artist.name}** - [**${album.name}**](${album.url}) - **${album.playcount}** *plays*`;
-							}
-
-							albumEmbed.setDescription(descriptionString);
-
-							return interaction.editReply({ content: '', embeds: [albumEmbed] });
-
-
-						} else {
-							return interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');
+						if (!userData) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
 						}
+						if (!userData.get('lastfm')) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
+						}
+						const lastfmNickname = userData.get('lastfm');
+
+						// Get top albums
+						const albums = await Lastfm.getTopAlbums(user, lastfmNickname, range, amount);
+						if (albums.error) {
+							return interaction.editReply({ content: albums.error });
+						}
+
+						const rangeString = Lastfm.str.range(range);
+						const albumEmbed = new EmbedBuilder()
+							.setColor(0xC3000D)
+							.setAuthor({ name: `${user.username} top albums of the ${rangeString}:`, iconURL: user.avatarURL() })
+							.setFooter({ text: `total ${albums['@attr'].total} albums played (${rangeString})` });
+
+						let descriptionString = '';
+						for (const [index, album] of albums.album.entries()) {
+							descriptionString += `\n${index + 1}. **${album.artist.name}** - [**${album.name}**](${album.url}) - **${album.playcount}** *plays*`;
+						}
+						albumEmbed.setDescription(descriptionString);
+
+						return interaction.editReply({ content: '', embeds: [albumEmbed] });
 					}
 
 					case 'tracks': {
@@ -365,63 +312,35 @@ module.exports = {
 						const range = interaction.options.getString('range');
 						const amount = interaction.options.getInteger('amount') ?? 10;
 
+						// Get user nickname from bot database
 						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
-						if (userData) {
-							const lastfmLogin = userData.get('lastfm');
-
-							const tracks = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${amount}&period=${range}`).then((res) => res.json()).catch(error => { return error; });
-
-							if (tracks.error) {
-								if (tracks.error == 6) {
-									await interaction.editReply(`Last.fm error response: User \`${lastfmLogin}\` not found 💀`);
-								} else {
-									await interaction.editReply('Unknown Last.fm API error 🔥');
-								}
-								return;
-							}
-
-							if (!tracks.toptracks) {
-								return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							if (!tracks.toptracks.track[0]) {
-								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							if (tracks.toptracks.track == 0) {
-								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							let rangeString = '';
-							if (range == '7day') {
-								rangeString = 'week';
-							} else if (range == '1month') {
-								rangeString = 'month';
-							} else if (range == '12month') {
-								rangeString = 'year';
-							} else if (range == 'overall') {
-								rangeString = 'all time';
-							}
-
-							const trackEmbed = new EmbedBuilder()
-								.setColor(0xC3000D)
-								.setAuthor({ name: `${user.username} top tracks of the ${rangeString}:`, iconURL: user.avatarURL() })
-								.setFooter({ text: `total ${tracks.toptracks['@attr'].total} tracks played (${rangeString})` });
-
-							let descriptionString = '';
-
-							for (const [index, track] of tracks.toptracks.track.entries()) {
-								descriptionString += `\n${index + 1}. **${track.artist.name}** - [**${track.name}**](${track.url}) - **${track.playcount}** *plays*`;
-							}
-
-							trackEmbed.setDescription(descriptionString);
-
-							return interaction.editReply({ content: '', embeds: [trackEmbed] });
-
-
-						} else {
-							return interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');
+						if (!userData) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
 						}
+						if (!userData.get('lastfm')) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
+						}
+						const lastfmNickname = userData.get('lastfm');
+
+						// Get top tracks
+						const tracks = await Lastfm.getTopTracks(user, lastfmNickname, range, amount);
+						if (tracks.error) {
+							return interaction.editReply({ content: tracks.error });
+						}
+
+						const rangeString = Lastfm.str.range(range);
+						const trackEmbed = new EmbedBuilder()
+							.setColor(0xC3000D)
+							.setAuthor({ name: `${user.username} top tracks of the ${rangeString}:`, iconURL: user.avatarURL() })
+							.setFooter({ text: `total ${tracks['@attr'].total} tracks played (${rangeString})` });
+
+						let descriptionString = '';
+						for (const [index, track] of tracks.track.entries()) {
+							descriptionString += `\n${index + 1}. **${track.artist.name}** - [**${track.name}**](${track.url}) - **${track.playcount}** *plays*`;
+						}
+						trackEmbed.setDescription(descriptionString);
+
+						return interaction.editReply({ content: '', embeds: [trackEmbed] });
 					}
 
 					default: {
@@ -454,17 +373,7 @@ module.exports = {
 							return interaction.editReply({ content: albums.error });
 						}
 
-						let rangeString = '';
-						if (range == '7day') {
-							rangeString = 'week';
-						} else if (range == '1month') {
-							rangeString = 'month';
-						} else if (range == '12month') {
-							rangeString = 'year';
-						} else if (range == 'overall') {
-							rangeString = 'all time';
-						}
-
+						const rangeString = Lastfm.str.range(range);
 						if (!process.env.TERMUX) {
 
 							// Create canvas image

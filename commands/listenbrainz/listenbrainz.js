@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const validator = require('validator');
 require('dotenv').config();
 const Listenbrainz = require('../../helpers/listenbrainz');
@@ -39,7 +39,6 @@ module.exports = {
 						.setDescription('The user (default you).')))
 		.setDMPermission(true),
 	async execute(interaction) {
-
 		if (!process.env.LISTENBRAINZ_TOKEN) {
 			return interaction.reply('Listenbrainz commands are **disabled** because the bot owner did not provided an Listenbrainz API token.');
 		}

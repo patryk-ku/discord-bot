@@ -11,10 +11,12 @@ module.exports = {
 				.setDescription('The user (default you).'))
 		.setDMPermission(true),
 	async execute(interaction) {
+		if (!process.env.LASTFM_API_KEY) {
+			return interaction.reply(Lastfm.msg.apiDisabled());
+		}
+
 		await interaction.deferReply();
 		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
-		// await interaction.editReply('Loading...');
-		// await interaction.editReply('Connecting with database...');
 		const user = interaction.options.getUser('user') ?? interaction.user;
 
 		// Get user nickname from bot database

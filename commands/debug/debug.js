@@ -3,7 +3,6 @@ require('dotenv').config();
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
-const helperFunctions = require('../../helpers/functions');
 
 module.exports = {
 	data: new SlashCommandBuilder()

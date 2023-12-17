@@ -12,6 +12,10 @@ module.exports = {
 				.setDescription('The user (default you).'))
 		.setDMPermission(true),
 	async execute(interaction) {
+		if (!process.env.LASTFM_API_KEY) {
+			return interaction.reply(Lastfm.msg.apiDisabled());
+		}
+
 		await interaction.deferReply();
 		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 		const user = interaction.options.getUser('user') ?? interaction.user;
