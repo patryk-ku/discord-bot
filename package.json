@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon index.js",
-    "start": "node index.js",
+    "start": "npx pm2 start index.js --name 'discord-bot' --log 'bot.log'",
+    "restart": "npx pm2 restart 'discord-bot'",
+    "stop": "npx pm2 delete 'discord-bot' && npx pm2 kill",
     "deploy-commands": "node ./scripts/deploy-commands.js",
     "deploy-global-commands": "node ./scripts/deploy-global-commands.js",
     "reset-commands": "node ./scripts/reset-commands.js",
@@ -18,6 +20,7 @@
     "@napi-rs/canvas": "^0.1.44",
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1",
+    "pm2": "^5.3.0",
     "sequelize": "^6.35.0",
     "sqlite3": "^5.1.6",
     "validator": "^13.11.0",

@@ -46,6 +46,15 @@ They require administrator privileges on the server
 | `/admin lastfm remove` | Delete lastfm nickname of given user from bot database. |
 | `/admin lastfm users` | List all last.fm users from this server. |
 
+### Configuration commands
+
+These commands can only be used by the owner of an instance of this bot
+
+| command | description |
+| ----------- | ----------- |
+| `/config status` | Set bot status. |
+| `/config activity` | Set bot activity. |
+
 ## Requirements
 
 - Node.js v18 or higher
@@ -104,6 +113,17 @@ They require administrator privileges on the server
 	```
 	Ready! Logged in as your-bot-name#and-id
 	Connection to database has been established successfully.
+	```
+	To restart bot use:
+
+	```sh
+	npm run restart
+	```
+
+	To stop bot:
+
+	```sh
+	npm run stop
 	```
 
 ## Made with
