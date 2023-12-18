@@ -59,6 +59,8 @@ module.exports = {
 			}
 		} else {
 			songEmbed.setAuthor({ name: 'Last song:', url: nowPlaying.track[0].url, iconURL: user.avatarURL() });
+			songEmbed.setFooter({ text: 'Last.fm' });
+			songEmbed.setTimestamp(new Date(nowPlaying.track[0].date.uts * 1000));
 		}
 
 		await interaction.editReply({ content: '', embeds: [songEmbed] });

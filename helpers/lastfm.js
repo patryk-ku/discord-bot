@@ -11,14 +11,14 @@ exports.getNowPlaying = async (user, nickname) => {
 			.then((res) => res.json())
 			.catch(error => { throw new Error(error); });
 	} catch (error) {
-		return { error: `Failed to fetch now playing data - \`${error}\`` };
+		return { error: this.msg.fetchError(error) };
 	}
 
 	if (nowPlaying.error) {
 		if (nowPlaying.error == 6) {
-			return { error: `Last.fm error response: User \`${nickname}\` not found 💀` };
+			return { error: this.msg.userNotFound(nickname) };
 		} else {
-			return { error: `Unknown Last.fm API error 🔥 \`${nowPlaying}\`` };
+			return { error: this.msg.unknownApiError(nowPlaying) };
 		}
 	}
 
@@ -30,11 +30,58 @@ exports.getNowPlaying = async (user, nickname) => {
 		return { error: this.msg.noData(user, nickname) };
 	}
 
+	if (nowPlaying.recenttracks.track.length == 0) {
+		return { error: this.msg.noData(user, nickname) };
+	}
+
 	if (nowPlaying.recenttracks['@attr'].total == '0') {
 		return { error: this.msg.noData(user, nickname) };
 	}
 
 	return nowPlaying.recenttracks;
+};
+
+exports.getRecentTracks = async (user, nickname, limit) => {
+	let recentTracks;
+	try {
+		recentTracks = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${limit}`)
+			.then(res => {
+				if (!res.ok) {
+					throw new Error(res.statusText);
+				}
+				return res;
+			})
+			.then((res) => res.json())
+			.catch(error => { throw new Error(error); });
+	} catch (error) {
+		return { error: this.msg.fetchError(error) };
+	}
+
+	if (recentTracks.error) {
+		if (recentTracks.error == 6) {
+			return { error: this.msg.userNotFound(nickname) };
+		} else {
+			return { error: this.msg.unknownApiError(recentTracks) };
+		}
+	}
+
+	if (!recentTracks.recenttracks) {
+		return { error: this.msg.noData(user, nickname) };
+	}
+
+	if (!recentTracks.recenttracks.track[0]) {
+		return { error: this.msg.noData(user, nickname) };
+	}
+
+	if (recentTracks.recenttracks.track.length == 0) {
+		return { error: this.msg.noData(user, nickname) };
+	}
+
+	if (recentTracks.recenttracks['@attr'].total == '0') {
+		return { error: this.msg.noData(user, nickname) };
+	}
+
+	return recentTracks.recenttracks;
 };
 
 exports.getTopArtists = async (user, nickname, period, limit) => {
@@ -50,14 +97,14 @@ exports.getTopArtists = async (user, nickname, period, limit) => {
 			.then((res) => res.json())
 			.catch(error => { throw new Error(error); });
 	} catch (error) {
-		return { error: `Failed to fetch ${user} top artists - \`${error}\`` };
+		return { error: this.msg.fetchError(error) };
 	}
 
 	if (topArtists.error) {
 		if (topArtists.error == 6) {
-			return { error: `Last.fm error response: User \`${nickname}\` not found 💀` };
+			return { error: this.msg.userNotFound(nickname) };
 		} else {
-			return { error: `Unknown Last.fm API error 🔥 \`${topArtists}\`` };
+			return { error: this.msg.unknownApiError(topArtists) };
 		}
 	}
 
@@ -69,7 +116,7 @@ exports.getTopArtists = async (user, nickname, period, limit) => {
 		return { error: this.msg.noData(user, nickname) };
 	}
 
-	if (topArtists.topartists.artist == 0) {
+	if (topArtists.topartists.artist.length == 0) {
 		return { error: this.msg.noData(user, nickname) };
 	}
 
@@ -93,14 +140,14 @@ exports.getTopAlbums = async (user, nickname, period, limit) => {
 			.then((res) => res.json())
 			.catch(error => { throw new Error(error); });
 	} catch (error) {
-		return { error: `Failed to fetch ${user} top albums - \`${error}\`` };
+		return { error: this.msg.fetchError(error) };
 	}
 
 	if (topAlbums.error) {
 		if (topAlbums.error == 6) {
-			return { error: `Last.fm error response: User \`${nickname}\` not found 💀` };
+			return { error: this.msg.userNotFound(nickname) };
 		} else {
-			return { error: `Unknown Last.fm API error 🔥 \`${topAlbums}\`` };
+			return { error: this.msg.unknownApiError(topAlbums) };
 		}
 	}
 
@@ -112,7 +159,7 @@ exports.getTopAlbums = async (user, nickname, period, limit) => {
 		return { error: this.msg.noData(user, nickname) };
 	}
 
-	if (topAlbums.topalbums.album == 0) {
+	if (topAlbums.topalbums.album.length == 0) {
 		return { error: this.msg.noData(user, nickname) };
 	}
 
@@ -136,14 +183,14 @@ exports.getTopTracks = async (user, nickname, period, limit) => {
 			.then((res) => res.json())
 			.catch(error => { throw new Error(error); });
 	} catch (error) {
-		return { error: `Failed to fetch ${user} top tracks - \`${error}\`` };
+		return { error: this.msg.fetchError(error) };
 	}
 
 	if (topTracks.error) {
 		if (topTracks.error == 6) {
-			return { error: `Last.fm error response: User \`${nickname}\` not found 💀` };
+			return { error: this.msg.userNotFound(nickname) };
 		} else {
-			return { error: `Unknown Last.fm API error 🔥 \`${topTracks}\`` };
+			return { error: this.msg.unknownApiError(topTracks) };
 		}
 	}
 
@@ -155,7 +202,7 @@ exports.getTopTracks = async (user, nickname, period, limit) => {
 		return { error: this.msg.noData(user, nickname) };
 	}
 
-	if (topTracks.toptracks.track == 0) {
+	if (topTracks.toptracks.track.length == 0) {
 		return { error: this.msg.noData(user, nickname) };
 	}
 
@@ -163,8 +210,39 @@ exports.getTopTracks = async (user, nickname, period, limit) => {
 		return { error: this.msg.noData(user, nickname) };
 	}
 
-	console.log(topTracks);
 	return topTracks.toptracks;
+};
+
+exports.getUserInfo = async (user, nickname) => {
+	let userInfo;
+	try {
+		userInfo = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json`)
+			.then(res => {
+				if (!res.ok) {
+					throw new Error(res.statusText);
+				}
+				return res;
+			})
+			.then((res) => res.json())
+			.catch(error => { throw new Error(error); });
+	} catch (error) {
+		return { error: this.msg.fetchError(error) };
+	}
+
+	if (userInfo.error) {
+		if (userInfo.error == 6) {
+			return { error: this.msg.userNotFound(nickname) };
+		} else {
+			return { error: this.msg.unknownApiError(userInfo) };
+		}
+	}
+
+	if (!userInfo.user) {
+		return { error: this.msg.noData(user, nickname) };
+	}
+
+	console.log(userInfo);
+	return userInfo.user;
 };
 
 exports.str = {
@@ -195,5 +273,14 @@ exports.msg = {
 	},
 	apiDisabled: () => {
 		return 'Last.fm commands are **disabled** because the bot owner did not provided an Last.fm API key.';
+	},
+	userNotFound: (nickname) => {
+		return `Last.fm error response: User \`${nickname}\` not found 💀`;
+	},
+	unknownApiError: (error) => {
+		return `Unknown Last.fm API error 🔥 - \`${error}\``;
+	},
+	fetchError: (error) => {
+		return `Failed to fetch data from Last.fm servers - \`${error}\``;
 	},
 };

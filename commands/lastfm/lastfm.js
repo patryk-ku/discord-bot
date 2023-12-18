@@ -7,6 +7,7 @@ const helperFunctions = require('../../helpers/functions');
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
+const fs = require('fs').promises;
 
 // Termux fix
 let Canvas;
@@ -446,10 +447,17 @@ module.exports = {
 						} catch (error) {
 							console.log(`error: ${error}`);
 							helperFunctions.deleteMultipleFiles(filePaths);
-							return interaction.editReply(`Failed to create collage - \`${error}\``);
+							return interaction.editReply('Failed to create collage.');
 						}
 
-						// todo: check here if file exists
+						// Check if file exists
+						try {
+							await fs.access(`./tmpfiles/${fileId}-collage.jpg`, fs.constants.F_OK);
+						} catch (error) {
+							console.log('Collage file don\'t exists.');
+							helperFunctions.deleteMultipleFiles(filePaths);
+							return interaction.editReply('Failed to create collage.');
+						}
 
 						filePaths.push(`./tmpfiles/${fileId}-collage.jpg`);
 						console.log('Collage is ready.');
@@ -481,62 +489,47 @@ module.exports = {
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						const amount = interaction.options.getInteger('amount') ?? 5;
 
+						// Get user nickname from bot database
 						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
-						if (userData) {
-							const lastfmLogin = userData.get('lastfm');
-							// await interaction.editReply(`Fetching data from last.fm for user: \`${lastfmLogin}\`...`);
-
-							const recentSongs = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${amount}`).then((res) => res.json()).catch(error => { return error; });
-
-							if (recentSongs.error) {
-								if (recentSongs.error == 6) {
-									await interaction.editReply(`Last.fm error response: User \`${lastfmLogin}\` not found 💀`);
-								} else {
-									await interaction.editReply('Unknown Last.fm API error 🔥');
-								}
-								return;
-							}
-
-							if (!recentSongs.recenttracks) {
-								return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							if (!recentSongs.recenttracks.track[0]) {
-								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							if (recentSongs.recenttracks.track.length == 0) {
-								return await interaction.editReply(`No recent tracks for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							const multiEmbedd = [];
-
-							for (const song of recentSongs.recenttracks.track) {
-
-								if (song['@attr']) {
-									if (song['@attr'].nowplaying) {
-										continue;
-									}
-								}
-
-								const songEmbed = new EmbedBuilder()
-									.setColor(0xC3000D);
-
-								// Check if album cover url exists
-								if (song.image[3]['#text']) {
-									songEmbed.setAuthor({ name: `${song.name}  -  ${song.artist['#text']}`, iconURL: song.image[3]['#text'] });
-								} else {
-									songEmbed.setAuthor({ name: `${song.name}  -  ${song.artist['#text']}` });
-								}
-
-								multiEmbedd.push(songEmbed);
-							}
-
-							return await interaction.editReply({ content: `## \`${lastfmLogin}\` recent ${amount} songs:`, embeds: [...multiEmbedd] });
-
-						} else {
-							return await interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');
+						if (!userData) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
 						}
+						if (!userData.get('lastfm')) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
+						}
+						const lastfmNickname = userData.get('lastfm');
+
+						// Get recent tracks
+						const recentTracks = await Lastfm.getRecentTracks(user, lastfmNickname, amount);
+						if (recentTracks.error) {
+							return interaction.editReply({ content: recentTracks.error });
+						}
+
+						const multiEmbedd = [];
+
+						for (const song of recentTracks.track) {
+
+							if (song['@attr']) {
+								if (song['@attr'].nowplaying) {
+									continue;
+								}
+							}
+
+							const songEmbed = new EmbedBuilder()
+								.setColor(0xC3000D)
+								.setTimestamp(new Date(song.date.uts * 1000));
+
+							// Check if album cover url exists
+							if (song.image[3]['#text']) {
+								songEmbed.setAuthor({ name: `${song.artist['#text']} - ${song.name}`, iconURL: song.image[3]['#text'] });
+							} else {
+								songEmbed.setAuthor({ name: `${song.artist['#text']} - ${song.name}` });
+							}
+
+							multiEmbedd.push(songEmbed);
+						}
+
+						return await interaction.editReply({ content: `## ${user} recent ${amount} songs:`, embeds: [...multiEmbedd] });
 					}
 
 					case 'profile': {
@@ -544,55 +537,50 @@ module.exports = {
 						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						const user = interaction.options.getUser('user') ?? interaction.user;
 
+						// Get user nickname from bot database
 						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
-						if (userData) {
-							const lastfmLogin = userData.get('lastfm');
-
-							const profile = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${lastfmLogin}&api_key=${process.env.LASTFM_API_KEY}&format=json`).then((res) => res.json()).catch(error => { return error; });
-
-							if (profile.error) {
-								if (profile.error == 6) {
-									await interaction.editReply(`Last.fm error response: User \`${lastfmLogin}\` not found 💀`);
-								} else {
-									await interaction.editReply('Unknown Last.fm API error 🔥');
-								}
-								return;
-							}
-
-							if (!profile.user) {
-								return await interaction.editReply(`Unknown error for user: \`${lastfmLogin}\` ❌`);
-							}
-
-							const profileEmbed = new EmbedBuilder()
-								.setColor(0xC3000D)
-								.setAuthor({ name: `${user.username} last.fm profile:`, iconURL: user.avatarURL(), url: profile.user.url })
-								.setThumbnail(profile.user.image[3]['#text'])
-								// .setImage(profile.user.image[3]['#text'])
-								.addFields(
-									{ name: 'Nickname', value: profile.user.name, inline: true },
-									{ name: 'Scrobbles', value: profile.user.playcount, inline: true },
-									{ name: '\u200B', value: 'Total count:' },
-									{ name: 'Tracks', value: profile.user.track_count, inline: true },
-									{ name: 'Albums', value: profile.user.album_count, inline: true },
-									{ name: 'Artists', value: profile.user.artist_count, inline: true },
-								)
-								.setFooter({ text: 'Scrobbling since' })
-								.setTimestamp(new Date(profile.user.registered.unixtime * 1000));
-
-							if (profile.user.country) {
-								if (profile.user.country != 'None' && profile.user.country.length > 0) {
-									profileEmbed.addFields(
-										// { name: '\u200B', value: 'Other:' },
-										{ name: 'Country', value: profile.user.country },
-									);
-								}
-							}
-
-							return interaction.editReply({ content: '', embeds: [profileEmbed] });
-
-						} else {
-							return await interaction.editReply('Could not find user in a database. Use `lastfm nickname set` command to add your last.fm nickname to bot database.');
+						if (!userData) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
 						}
+						if (!userData.get('lastfm')) {
+							return interaction.editReply(Lastfm.msg.missingUsername(user));
+						}
+						const lastfmNickname = userData.get('lastfm');
+
+						// Get profile info
+						const profile = await Lastfm.getUserInfo(user, lastfmNickname);
+						if (profile.error) {
+							return interaction.editReply({ content: profile.error });
+						}
+
+						const profileEmbed = new EmbedBuilder()
+							.setColor(0xC3000D)
+							.setAuthor({ name: `${user.username} last.fm profile:`, iconURL: user.avatarURL(), url: profile.url })
+							.setThumbnail(profile.image[3]['#text'])
+							.addFields(
+								{ name: 'Nickname', value: profile.name, inline: true },
+								{ name: 'Scrobbles', value: profile.playcount, inline: true },
+							)
+							.setFooter({ text: 'Scrobbling since' })
+							.setTimestamp(new Date(profile.registered.unixtime * 1000));
+
+						if (profile.country) {
+							if (profile.country != 'None' && profile.country.length > 0) {
+								profileEmbed.addFields(
+									// { name: '\u200B', value: 'Other:' },
+									{ name: 'Country', value: profile.country },
+								);
+							}
+						}
+
+						profileEmbed.addFields(
+							{ name: '\u200B', value: 'Total count:' },
+							{ name: 'Tracks', value: profile.track_count, inline: true },
+							{ name: 'Albums', value: profile.album_count, inline: true },
+							{ name: 'Artists', value: profile.artist_count, inline: true },
+						);
+
+						return interaction.editReply({ content: '', embeds: [profileEmbed] });
 					}
 
 					default: {
