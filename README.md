@@ -59,7 +59,7 @@ These commands can only be used by the owner of an instance of this bot
 
 - Node.js v18 or higher
 - yt-dlp (for `/embed` command)
-- ffmpeg (for `/embed` compression option)
+- MP4Box (for `/embed` command, optional in some cases)
 - Any modern linux instalation (for now this bot is linux only, may change later)
 
 ## Installation and setup

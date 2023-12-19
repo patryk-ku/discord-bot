@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
+const { generateDependencyReport } = require('@discordjs/voice');
 require('dotenv').config();
 const { exec } = require('child_process');
 const util = require('util');
@@ -22,6 +23,10 @@ module.exports = {
 			subcommand
 				.setName('termux')
 				.setDescription('Debug info about the Termux instance (if in use).'))
+		.addSubcommand(subcommand =>
+			subcommand
+				.setName('voice')
+				.setDescription('Debug info about the voice internals.'))
 		.setDefaultMemberPermissions(0)
 		.setDMPermission(false),
 	async execute(interaction) {
@@ -78,7 +83,7 @@ module.exports = {
 						console.log(stderr);
 					}
 					console.log(stdout);
-					let uptime = stdout.split(',');
+					const uptime = stdout.split(',');
 					uptime[0] = uptime[0].slice(2);
 					infoString += `### Uptime \n├${uptime[0]}\n├${uptime[1]}\n└${uptime[2]}`;
 				} catch (error) {
@@ -104,6 +109,13 @@ module.exports = {
 				}
 
 				return interaction.editReply(infoString);
+			}
+
+			case 'voice': {
+				await interaction.deferReply();
+				const report = generateDependencyReport();
+				console.log(report);
+				return interaction.editReply(report);
 			}
 
 			default: {
