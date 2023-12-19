@@ -45,7 +45,8 @@ module.exports = {
 		console.log(`ID: ${name}`);
 		const fileName = `./tmpfiles/${name}.opus`;
 		try {
-			const { error, stdout, stderr } = await execPromise(`yt-dlp "${url}" -o "${fileName}" --max-filesize 10M -x --audio-format opus `);
+			// Todo: Also test here "-S +size" or "-f worst":
+			const { error, stdout, stderr } = await execPromise(`yt-dlp "${url}" -o "${fileName}" --max-filesize 10M -x --audio-format opus -S +size`);
 			if (error) {
 				console.log(error);
 			}
