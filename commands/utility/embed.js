@@ -15,15 +15,6 @@ module.exports = {
 			option.setName('url')
 				.setDescription('The url/link to page with video.')
 				.setRequired(true))
-		.addStringOption(option =>
-			option.setName('compression')
-				.setDescription('Use this if "Max file size exceeded" error.')
-				.addChoices(
-					{ name: 'Low', value: '1300k' },
-					{ name: 'Medium', value: '1000k' },
-					{ name: 'High', value: '700k' },
-					{ name: 'Minecraft', value: '300k' },
-				))
 		.setDMPermission(false),
 	async execute(interaction) {
 		await interaction.deferReply();
@@ -41,21 +32,14 @@ module.exports = {
 		const name = String(Date.now());
 		console.log(`ID: ${name}`);
 
-		let maxFileSize = '8M';
-		if (interaction.options.getString('compression')) {
-			maxFileSize = '14M';
-			if (interaction.options.getString('compression') == '1000k') {
-				maxFileSize = '17M';
-			} else if (interaction.options.getString('compression') == '700k') {
-				maxFileSize = '20M';
-			} else if (interaction.options.getString('compression') == '300k') {
-				maxFileSize = '32M';
-			}
-		}
+		// in mb:
+		const discordUploadLimit = 8;
+		const maxFragments = 9;
+		const maxFileSize = `${discordUploadLimit * maxFragments}M`;
 
-		// Downloading video using local yt-dlp
+		// Downloading video using yt-dlp
 		try {
-			const { error, stdout, stderr } = await execPromise(`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4,webm)"`);
+			const { error, stdout, stderr } = await execPromise(`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4)"`);
 			if (error) {
 				console.log(error);
 			}
@@ -65,75 +49,84 @@ module.exports = {
 
 			console.log(stdout);
 			if (stdout.includes('File is larger than max-filesize')) {
-				interaction.editReply(`\`${url}\` - Download failed (╥﹏╥). Max file size exceeded.`);
-				return;
+				return interaction.editReply(`\`${url}\` - Download failed (╥﹏╥). Max file size exceeded.`);
 			}
 		} catch (error) {
 			console.log(`error: ${error.message}`);
-			interaction.editReply(`\`${url}\` - Download failed (╥﹏╥)`);
-			return;
+			return interaction.editReply(`\`${url}\` - Download failed (╥﹏╥)`);
 		}
 
-		// Finding right file extension (.mp4 or .webm)
-		let filePath = '';
-		if (fs.existsSync(`./tmpfiles/${name}.mp4`)) {
-			filePath = `./tmpfiles/${name}.mp4`;
-		} else if (fs.existsSync(`./tmpfiles/${name}.webm`)) {
-			filePath = `./tmpfiles/${name}.webm`;
-		} else {
-			await interaction.editReply(`\`${url}\` - Error, failed to download file.`);
-			return;
-		}
+		const filePath = `./tmpfiles/${name}.mp4`;
 
 		let fileSize = await fs.promises.stat(filePath);
 		fileSize = fileSize.size / (1024 * 1024);
 
-		// Compression
-		let filePath2 = '';
-		if (interaction.options.getString('compression') && fileSize > 8) {
+		// Spliting video into parts in needed:
+		if (fileSize > discordUploadLimit) {
+			console.log('Spliting video into parts.');
 			try {
-				await interaction.editReply('Reducing file size...');
-				const { error, stdout, stderr } = await execPromise(`ffmpeg -i ${filePath} -vcodec libx264 -b:v ${interaction.options.getString('compression')} -acodec aac ./tmpfiles/${name}_compressed.mp4`);
+				const { error, stdout, stderr } = await execPromise(`MP4Box -splits ${discordUploadLimit * 1000} ${filePath}`);
 				if (error) {
 					console.log(error);
 				}
 				if (stderr) {
 					console.log(stderr);
 				}
-
 				console.log(stdout);
-				filePath2 = filePath;
-				filePath = `./tmpfiles/${name}_compressed.mp4`;
-
 			} catch (error) {
-				console.log(`error: ${error.message}`);
-				interaction.editReply(`\`${url}\` - Error: compression failed (╥﹏╥)`);
+				console.log(`error: ${error}`);
 				helperFunctions.deleteFile(filePath);
-				return;
-			}
-		}
-
-		let fileSize2 = await fs.promises.stat(filePath);
-		fileSize2 = fileSize2.size / (1024 * 1024);
-		if (fileSize2 > 8) {
-			await interaction.editReply(`\`${url}\` - Error: File still too large (${fileSize2.toFixed(2)}MB / 8MB).`);
-		} else {
-			// Uploading file to discord
-			const file = new AttachmentBuilder(filePath);
-			try {
-				console.log(`Uploading file: ${filePath}`);
-				await interaction.editReply('Uploading file to discord...');
-				await interaction.editReply({ content: `\`${url}\``, files: [file] });
-				console.log('File sent succesfully');
-			} catch (error) {
-				await interaction.editReply(`\`${url}\` - Error, failed to upload video to discord servers.`);
-				console.log(error);
+				return interaction.editReply('Failed to split video into parts and due to the file weight limit, the whole file cannot be sent.');
 			}
 
+			console.log('Video fragments:');
+			const fragmentsList = [];
+			for (let i = 1; i < maxFragments + 1; i++) {
+				const fragmentPath = `./tmpfiles/${name}_00${i}.mp4`;
+				// Check if file exists
+				try {
+					await fs.promises.access(fragmentPath, fs.constants.F_OK);
+					fragmentsList.push(fragmentPath);
+					console.log(fragmentPath);
+				} catch (error) {
+					break;
+				}
+			}
+
+			await interaction.editReply(`Uploading \`${url}\` to discord in **${fragmentsList.length} parts** (because the ${discordUploadLimit}MB limit has been exceeded) please wait...`);
+
+			console.log('Uploading files.');
+			for (const [index, fragment] of fragmentsList.entries()) {
+				const file = new AttachmentBuilder(fragment);
+				try {
+					await interaction.followUp({ content: `## Part ${index + 1}`, files: [file] });
+					console.log(`File sent succesfully: ${fragment}`);
+				} catch (error) {
+					await interaction.followUp(`\`${url}\` - Error, failed to upload **part ${index}** of video to discord servers. Try again.`);
+					console.log(error);
+				}
+			}
+
+			await interaction.followUp('Entire video sent succesfully.');
+			console.log('Entire video sent succesfully.');
+			helperFunctions.deleteFile(filePath);
+			helperFunctions.deleteMultipleFiles(fragmentsList);
+			return;
 		}
 
-		// Deleting tmp file(s)
-		helperFunctions.deleteMultipleFiles([filePath, filePath2]);
+		// Uploading file to discord if entire video < discordFileLimit
+		const file = new AttachmentBuilder(filePath);
+		try {
+			console.log(`Uploading file: ${filePath}`);
+			await interaction.editReply('Uploading file to discord...');
+			await interaction.editReply({ content: `\`${url}\``, files: [file] });
+			console.log('File sent succesfully');
+		} catch (error) {
+			await interaction.editReply(`\`${url}\` - Error, failed to upload video to discord servers.`);
+			console.log(error);
+		}
+
+		helperFunctions.deleteFile(filePath);
 		return;
 	},
 };

@@ -241,7 +241,6 @@ exports.getUserInfo = async (user, nickname) => {
 		return { error: this.msg.noData(user, nickname) };
 	}
 
-	console.log(userInfo);
 	return userInfo.user;
 };
 
