@@ -19,6 +19,7 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 | `/lastfm top albums` | Replies with user top albums chart. |
 | `/lastfm top tracks` | Replies with user top tracks chart. |
 | `/lastfm profile` | Replies with user last.fm profile summary. |
+| `/lastfm server artist` | Replies with artist playcount for each member of the server. |
 
 ### Listenbrainz
 
@@ -35,6 +36,14 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 | ----------- | ----------- |
 | `/embed` | Embeds video from given url (insta/reddit/twitter etc). |
 | `/avatar` | Embeds avatar image of given user. |
+
+### Voice
+
+| command | description |
+| ----------- | ----------- |
+| `/join` | Request bot to join a voice channel. |
+| `/play` | Request bot to play music from a given link in a voice channel. |
+| `/leave` | Request bot to leave a voice channel. |
 
 ### Administrator commands
 

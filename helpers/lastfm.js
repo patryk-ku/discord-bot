@@ -84,10 +84,10 @@ exports.getRecentTracks = async (user, nickname, limit) => {
 	return recentTracks.recenttracks;
 };
 
-exports.getTopArtists = async (user, nickname, period, limit) => {
+exports.getTopArtists = async (user, nickname, period, limit, page = 1) => {
 	let topArtists;
 	try {
-		topArtists = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${limit}&period=${period}`)
+		topArtists = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${limit}&period=${period}&page=${page}`)
 			.then(res => {
 				if (!res.ok) {
 					throw new Error(res.statusText);
@@ -242,6 +242,37 @@ exports.getUserInfo = async (user, nickname) => {
 	}
 
 	return userInfo.user;
+};
+
+exports.getArtistScrobble = async (user, nickname, artist) => {
+	let counter = 1;
+	do {
+		const artists = await this.getTopArtists(user, nickname, 'overall', 1000, counter);
+		if (artists.error) {
+			return { error: artists.error };
+		}
+
+		// console.log(counter);
+		// console.log(artists);
+
+		const len = artists.artist.length;
+		// console.log(len);
+		for (let i = 0; i < len; i++) {
+			// console.log(artists.artist[i].name);
+			if (artists.artist[i].name == artist) {
+				return { playcount: Number(artists.artist[i].playcount), nickname: nickname, user: user };
+				// return artists;
+			}
+		}
+
+		if (artists['@attr'].page == artists['@attr'].totalPages) {
+			break;
+		}
+
+		counter++;
+
+	} while (counter < 10);
+	return { error: `${user} has 0 plays of this artist.` };
 };
 
 exports.str = {

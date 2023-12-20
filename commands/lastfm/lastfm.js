@@ -8,6 +8,8 @@ const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
 const fs = require('fs').promises;
+const Sequelize = require('sequelize');
+const querystring = require('querystring');
 
 // Termux fix
 let Canvas;
@@ -110,6 +112,20 @@ module.exports = {
 								.setDescription('Number of tracks (default 10, max 20).')
 								.setMinValue(1)
 								.setMaxValue(20))
+						.addUserOption(option =>
+							option.setName('user')
+								.setDescription('The user (default you).'))))
+		.addSubcommandGroup(subcommandgroup =>
+			subcommandgroup
+				.setName('server')
+				.setDescription('Last.fm server stats options.')
+				.addSubcommand(subcommand =>
+					subcommand
+						.setName('artist')
+						.setDescription('Check artist playcount for each member of the server (max 20 users)')
+						.addStringOption(option =>
+							option.setName('artist')
+								.setDescription('Artist name (default your now playing/last artist).'))
 						.addUserOption(option =>
 							option.setName('user')
 								.setDescription('The user (default you).'))))
@@ -342,6 +358,89 @@ module.exports = {
 						trackEmbed.setDescription(descriptionString);
 
 						return interaction.editReply({ content: '', embeds: [trackEmbed] });
+					}
+
+					default: {
+						return interaction.reply({ content: 'Error: Missing subcommand.', ephemeral: true });
+					}
+				}
+			}
+
+			case 'server': {
+				switch (interaction.options.getSubcommand()) {
+					case 'artist': {
+						await interaction.deferReply();
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						const user = interaction.options.getUser('user') ?? interaction.user;
+						let artist = interaction.options.getString('artist');
+
+						if (!artist) {
+							// Get user nickname from bot database
+							const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+							if (!userData) {
+								return interaction.editReply(Lastfm.msg.missingUsername(user));
+							}
+							if (!userData.get('lastfm')) {
+								return interaction.editReply(Lastfm.msg.missingUsername(user));
+							}
+							const lastfmNickname = userData.get('lastfm');
+
+							// Get now playing song
+							const nowPlaying = await Lastfm.getNowPlaying(user, lastfmNickname);
+							if (nowPlaying.error) {
+								return interaction.editReply({ content: nowPlaying.error });
+							}
+
+							artist = nowPlaying.track[0].artist['#text'];
+						}
+
+						// Get all logged server users
+						const members = await interaction.guild.members.fetch();
+						const membersIds = members.map(member => member.user.id);
+						const loggedUsers = await interaction.client.Users.findAll({ where: { user: { [Sequelize.Op.in]: membersIds } } });
+						// console.log(loggedUsers);
+
+						const promises = [];
+						for (let i = 0; i < loggedUsers.length; i++) {
+							const data = Lastfm.getArtistScrobble(await interaction.client.users.fetch(loggedUsers[i].dataValues.user), loggedUsers[i].dataValues.lastfm, artist);
+							promises.push(data);
+						}
+
+						const artistScrobbles = await Promise.all(promises).catch((error) => {
+							console.error(error);
+							return interaction.editReply('Error durning API call. Try again later.');
+						});
+						// console.log(artistScrobbles);
+
+						const artistsForEmbed = []
+						for (let i = 0; i < artistScrobbles.length; i++) {
+							if (!artistScrobbles[i].error) {
+								artistsForEmbed.push(artistScrobbles[i]);
+							}
+						}
+
+						if (artistsForEmbed.length == 0) {
+							return interaction.editReply(`Nobody on this server listens to **${artist}**.`);
+						}
+
+						artistsForEmbed.sort((a, b) => b.playcount - a.playcount);
+						// console.log(artistsForEmbed);
+
+						const artistEmbed = new EmbedBuilder()
+							.setColor(0xC3000D)
+							.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() });
+						// .setAuthor({ name: `${user.username} top artists of the ${rangeString}:`, iconURL: user.avatarURL() })
+						// .setFooter({ text: `total ${artists['@attr'].total} artist played (${rangeString})` });
+
+						let descriptionString = `### [${artist}](https://www.last.fm/music/${querystring.escape(artist)}) - listeners:`;
+
+						for (let i = 0; i < artistsForEmbed.length; i++) {
+							descriptionString += `\n${i + 1}. **${artistsForEmbed[i].user}** - **${artistsForEmbed[i].playcount}** *plays*`;
+						}
+
+						artistEmbed.setDescription(descriptionString);
+
+						return interaction.editReply({ content: '', embeds: [artistEmbed] });
 					}
 
 					default: {
