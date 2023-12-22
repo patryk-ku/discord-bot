@@ -398,7 +398,6 @@ module.exports = {
 						const members = await interaction.guild.members.fetch();
 						const membersIds = members.map(member => member.user.id);
 						const loggedUsers = await interaction.client.Users.findAll({ where: { user: { [Sequelize.Op.in]: membersIds } } });
-						// console.log(loggedUsers);
 
 						const promises = [];
 						for (let i = 0; i < loggedUsers.length; i++) {
@@ -408,11 +407,10 @@ module.exports = {
 
 						const artistScrobbles = await Promise.all(promises).catch((error) => {
 							console.error(error);
-							return interaction.editReply('Error durning API call. Try again later.');
+							return interaction.editReply(Lastfm.msg.unknownApiError(error));
 						});
-						// console.log(artistScrobbles);
 
-						const artistsForEmbed = []
+						const artistsForEmbed = [];
 						for (let i = 0; i < artistScrobbles.length; i++) {
 							if (!artistScrobbles[i].error) {
 								artistsForEmbed.push(artistScrobbles[i]);
@@ -424,20 +422,15 @@ module.exports = {
 						}
 
 						artistsForEmbed.sort((a, b) => b.playcount - a.playcount);
-						// console.log(artistsForEmbed);
 
 						const artistEmbed = new EmbedBuilder()
 							.setColor(0xC3000D)
 							.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() });
-						// .setAuthor({ name: `${user.username} top artists of the ${rangeString}:`, iconURL: user.avatarURL() })
-						// .setFooter({ text: `total ${artists['@attr'].total} artist played (${rangeString})` });
 
 						let descriptionString = `### [${artist}](https://www.last.fm/music/${querystring.escape(artist)}) - listeners:`;
-
 						for (let i = 0; i < artistsForEmbed.length; i++) {
 							descriptionString += `\n${i + 1}. **${artistsForEmbed[i].user}** - **${artistsForEmbed[i].playcount}** *plays*`;
 						}
-
 						artistEmbed.setDescription(descriptionString);
 
 						return interaction.editReply({ content: '', embeds: [artistEmbed] });

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const validator = require('validator');
 require('dotenv').config();
 const Listenbrainz = require('../../helpers/listenbrainz');
@@ -150,12 +150,22 @@ module.exports = {
 						const mbid = nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid;
 
 						// Fetching image
-						const coverArt = await Listenbrainz.getCoverArt(mbid, 9999);
+						const coverArt = await Listenbrainz.getCoverArt(mbid, 1200);
 						if (coverArt.error) {
 							return interaction.editReply({ content: coverArt.error });
 						}
 
-						return interaction.editReply({ content: coverArt });
+						const embed = new EmbedBuilder()
+							.setColor(Listenbrainz.colors.orange)
+							.setFooter({ text: 'Listenbrainz' })
+							.setTimestamp(new Date())
+							.setDescription(`## Cover Art
+								for **${nowPlaying.payload.listens[0].track_metadata.track_name}**
+								by [**${nowPlaying.payload.listens[0].track_metadata.artist_name}**](https://musicbrainz.org/artist/${nowPlaying.payload.listens[0].track_metadata.additional_info.artist_mbids[0]})
+								from this [**release**](https://musicbrainz.org/recording/${nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid})`)
+							.setImage(coverArt);
+
+						return interaction.editReply({ content: '', embeds: [embed] });
 					}
 
 					default: {
