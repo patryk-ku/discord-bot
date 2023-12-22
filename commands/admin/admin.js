@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const validator = require('validator');
+const Sequelize = require('sequelize');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -33,7 +34,8 @@ module.exports = {
 					subcommand
 						.setName('users')
 						.setDescription('List all last.fm users from this server.')))
-		.setDefaultMemberPermissions(0),
+		.setDefaultMemberPermissions(0)
+		.setDMPermission(false),
 	async execute(interaction) {
 
 		switch (interaction.options.getSubcommandGroup()) {
@@ -42,6 +44,7 @@ module.exports = {
 				switch (interaction.options.getSubcommand()) {
 					case 'set': {
 						await interaction.deferReply({ ephemeral: true });
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						const user = interaction.options.getUser('user');
 						const nickname = validator.escape(interaction.options.getString('nickname'));
 						await interaction.editReply({ content: `Setting \`${user.username}\` last.fm nickname to: \`${nickname}\``, ephemeral: true });
@@ -56,10 +59,12 @@ module.exports = {
 						} catch (error) {
 							if (error.name === 'SequelizeUniqueConstraintError') {
 								interaction.editReply({ content: 'User exist in database, updating nickname.', ephemeral: true });
-								const affectedRows = await interaction.client.Users.update({ lastfm: nickname }, { where: { user: user.id } });
+								const affectedRows = await interaction.client.Users.update({ lastfm: nickname }, { where: { user: user.id, locked: { [Sequelize.Op.not]: true } } });
 
 								if (affectedRows > 0) {
 									return interaction.editReply({ content: `\`${user.username}\` new nickname is \`${nickname}\`.`, ephemeral: true });
+								} else {
+									return interaction.editReply({ content: ` Setting nickname for \`${user.username}\` failed. The user has probably blocked this possibility for you.`, ephemeral: true });
 								}
 							}
 
@@ -71,14 +76,15 @@ module.exports = {
 
 					case 'remove': {
 						await interaction.deferReply({ ephemeral: true });
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						const user = interaction.options.getUser('user');
 						await interaction.editReply({ content: `Deleting \`${user.username}\` last.fm nickname from database...`, ephemeral: true });
 
 						// deletes user from database
-						const rowCount = await interaction.client.Users.destroy({ where: { user: user.id } });
+						const rowCount = await interaction.client.Users.destroy({ where: { user: user.id, locked: { [Sequelize.Op.not]: true } } });
 
 						if (!rowCount) {
-							return interaction.editReply({ content: `\`${user.username}\` doesn't exist in database.`, ephemeral: true });
+							return interaction.editReply({ content: `\`${user.username}\` doesn't exist in database or has blocked this possibility for you`, ephemeral: true });
 						}
 
 						return interaction.editReply({ content: `\`${user.username}\` deleted from database.`, ephemeral: true });
@@ -86,6 +92,7 @@ module.exports = {
 
 					case 'users': {
 						await interaction.deferReply({ ephemeral: true });
+						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 						return interaction.editReply({ content: 'WIP: command not ready yet', ephemeral: true });
 					}
 

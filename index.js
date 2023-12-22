@@ -6,7 +6,13 @@ const Sequelize = require('sequelize');
 // const { DataTypes } = require('sequelize');
 
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
+const client = new Client({
+	intents: [
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMembers,
+		GatewayIntentBits.GuildVoiceStates,
+	],
+});
 
 // Database
 client.sequelize = new Sequelize('database', 'user', 'password', {
@@ -22,6 +28,8 @@ client.Users = client.sequelize.define('users', {
 		unique: true,
 	},
 	lastfm: Sequelize.STRING,
+	locked: Sequelize.BOOLEAN,
+	listenbrainz: Sequelize.STRING,
 }, {
 	timestamps: false,
 });
