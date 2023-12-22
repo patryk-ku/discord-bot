@@ -93,12 +93,12 @@ These commands can only be used by the owner of an instance of this bot
 
 	OAuth2 invite URL permissions:
 
-	1. Scopes:
+	- Scopes:
 
 		- Bot
 		- applications.commands
 		
-	1. Bot permissions:
+	- Bot permissions:
 
 		- Read Messages/View Channels
 		- Send Messages
