@@ -35,6 +35,11 @@ module.exports = {
 			const user = Lastfm.getNowPlaying(await interaction.client.users.fetch(guild[i].dataValues.user), lastfmNickname);
 			requestUsersId.push(guild[i].dataValues.user);
 			request.push(user);
+
+			if (i == 24) {
+				break;
+			}
+
 		}
 
 		const users = await Promise.all(request).catch((error) => {
@@ -49,6 +54,9 @@ module.exports = {
 		let descriptionString = '### Now Playing:';
 		let usersCounter = 0;
 		for (const [index, user] of users.entries()) {
+			if (user.error) {
+				continue;
+			}
 			if (user.track[0]['@attr']) {
 				if (user.track[0]['@attr'].nowplaying) {
 					usersCounter++;
@@ -56,13 +64,16 @@ module.exports = {
 				}
 			}
 
-			if (usersCounter == 25) {
+			if (usersCounter == 24) {
 				songEmbed.setFooter({ text: 'Displaying max 25 users.' });
 				break;
 			}
 		}
 		let first = true;
 		for (const [index, user] of users.entries()) {
+			if (user.error) {
+				continue;
+			}
 			if (user.track[0]['@attr']) {
 				if (user.track[0]['@attr'].nowplaying) {
 					continue;
