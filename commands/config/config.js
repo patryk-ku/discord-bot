@@ -36,6 +36,10 @@ module.exports = {
 							{ name: 'Competing', value: 'Competing' },
 						)),
 		)
+		.addSubcommand(subcommand =>
+			subcommand
+				.setName('restart')
+				.setDescription('Restart bot.'))
 		.setDefaultMemberPermissions(0)
 		.setDMPermission(true),
 	async execute(interaction) {
@@ -74,6 +78,12 @@ module.exports = {
 				}
 
 				return interaction.editReply(`Bot activity type set to: **${type}**. Bot status set to: **${str}**.`);
+			}
+
+			case 'restart': {
+				await interaction.reply('Restarting...');
+				process.exit();
+				return;
 			}
 
 			default: {

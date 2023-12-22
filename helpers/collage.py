@@ -1,17 +1,11 @@
 import os
 from PIL import Image
-# from Pillow import Image
-# import argparse
 import sys
 
 print('Start of collage generator script...')
 # Parse id argument
 fileId = sys.argv[1]
 print('Collage ID: ' + fileId)
-
-# parser = argparse.ArgumentParser()
-# parser.add_argument("id", help="Interaction ID.")
-# args = parser.parse_args()
 
 # Tmp files path
 folder_path = './tmpfiles'

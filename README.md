@@ -1,5 +1,6 @@
 # discord-bot
-Simple self-hosted multipurpose Discord bot designed for use in small/private discord servers.
+
+Simple self-hosted multipurpose Discord bot designed for use in small/private discord servers. This bot is also 100% compatible with Termux because I host it myself on an old android phone.
 
 ## Commands
 
@@ -39,6 +40,8 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 
 ### Voice
 
+> Warning: These commands are experimental and may not work properly.
+
 | command | description |
 | ----------- | ----------- |
 | `/join` | Request bot to join a voice channel. |
@@ -63,6 +66,7 @@ These commands can only be used by the owner of an instance of this bot
 | ----------- | ----------- |
 | `/config status` | Set bot status. |
 | `/config activity` | Set bot activity. |
+| `/config restart` | Restart bot (use only when hosting a bot with any process manager for node.js, default for this bot is [pm2](https://pm2.keymetrics.io/)). |
 
 ### Debug commands
 
@@ -76,14 +80,35 @@ These commands can only be used by the owner of an instance of this bot
 - Node.js v18 or higher
 - yt-dlp (for `/embed` command)
 - MP4Box (for `/embed` command, optional in some cases)
-- Any modern linux instalation (for now this bot is linux only, may change later)
+- Any modern Linux instalation (for now this bot is linux only, may change later)
 
 ## Installation and setup
 
 1. Go to [Discord Developer Portal](https://discord.com/developers) and create new application with bot. Get here `APPLICATION ID` and `BOT TOKEN` and copy them to `.env.example` file.
 2. Discord bot permissions:
 
-	(WIP)
+	Privileged Gateway Intents:
+
+	- SERVER MEMBERS INTENT
+
+	OAuth2 invite URL permissions:
+
+	1. Scopes:
+
+		- Bot
+		- applications.commands
+		
+	1. Bot permissions:
+
+		- Read Messages/View Channels
+		- Send Messages
+		- Embed Links
+		- Attach Files
+		- Mention Everyone
+		- Use Slash Commands
+		- Connect
+		- Speak
+		- Use Voice Activity
 
 3. For last.fm features you need to obtain their API key [here](https://www.last.fm/api/account/create). For Listenbrainz features you need your profile token from [here](https://listenbrainz.org/profile/).
 4. Clone repository and rename `.env.example` to `.env`
@@ -92,7 +117,7 @@ These commands can only be used by the owner of an instance of this bot
 	mv .env.example .env
 	```
 
-	Now insert all API keys and tokens into `.env` file. Some are optional, check comments inside file for more info.
+	Now insert all API keys and tokens into `.env` file. Some are optional, check comments inside file for more info. There are also a couple of options for configuring the bot. Check the comments in the file for more information.
 
 5. Run
 
@@ -141,6 +166,13 @@ These commands can only be used by the owner of an instance of this bot
 	```sh
 	npm run stop
 	```
+
+	Other useful commands:
+
+	- npm run reload
+	- npm run monit
+	- npm run logs
+	- npo run dev
 
 ## Made with
 

@@ -12,9 +12,9 @@ module.exports = {
 				.addChannelTypes(ChannelType.GuildVoice))
 		.setDMPermission(true),
 	async execute(interaction) {
-		// if (!process.env.VOICE_COMMANDS) {
-		// 	return interaction.reply('Voice commands are disabled.');
-		// }
+		if (!process.env.VOICE_COMMANDS) {
+			return interaction.reply('Voice commands are disabled.');
+		}
 
 		await interaction.deferReply();
 		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);

@@ -252,23 +252,16 @@ exports.getArtistScrobble = async (user, nickname, artist) => {
 			return { error: artists.error };
 		}
 
-		// console.log(counter);
-		// console.log(artists);
-
 		const len = artists.artist.length;
-		// console.log(len);
 		for (let i = 0; i < len; i++) {
-			// console.log(artists.artist[i].name);
 			if (artists.artist[i].name == artist) {
 				return { playcount: Number(artists.artist[i].playcount), nickname: nickname, user: user };
-				// return artists;
 			}
 		}
 
 		if (artists['@attr'].page == artists['@attr'].totalPages) {
 			break;
 		}
-
 		counter++;
 
 	} while (counter < 10);

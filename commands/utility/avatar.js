@@ -13,6 +13,6 @@ module.exports = {
 		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
 		const user = interaction.options.getUser('user') ?? interaction.user;
 		const file = new AttachmentBuilder(user.avatarURL());
-		await interaction.editReply({ content: `\`${user.username}\` avatar:`, files: [file] });
+		await interaction.editReply({ content: `${user} avatar:`, files: [file] });
 	},
 };

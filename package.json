@@ -14,11 +14,10 @@
     "logs": "npx pm2 logs 'discord-bot'",
     "deploy-commands": "node ./scripts/deploy-commands.js",
     "deploy-global-commands": "node ./scripts/deploy-global-commands.js",
-    "reset-commands": "node ./scripts/reset-commands.js",
-    "termux-debug": "nohup node index.js >> ../output.log"
+    "reset-commands": "node ./scripts/reset-commands.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "Patryk Kurdziel",
   "license": "MIT",
   "dependencies": {
     "@discordjs/voice": "^0.16.1",
