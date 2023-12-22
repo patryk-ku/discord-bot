@@ -64,6 +64,13 @@ These commands can only be used by the owner of an instance of this bot
 | `/config status` | Set bot status. |
 | `/config activity` | Set bot activity. |
 
+### Debug commands
+
+| command | description |
+| ----------- | ----------- |
+| `/debug termux` | Debug info about the Termux instance (if in use). |
+| `/debug voice` | Debug info about the voice internals. |
+
 ## Requirements
 
 - Node.js v18 or higher
