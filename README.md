@@ -20,7 +20,7 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 | `/lastfm top albums` | Replies with user top albums chart. |
 | `/lastfm top tracks` | Replies with user top tracks chart. |
 | `/lastfm profile` | Replies with user last.fm profile summary. |
-| `/lastfm server artist` | Replies with artist playcount for each member of the server. |
+| `/lastfm server artist` | Replies with artist playcount for each member of the server (max 25 users, do not use this command on large servers). |
 
 ### Listenbrainz
 

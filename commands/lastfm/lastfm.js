@@ -399,10 +399,18 @@ module.exports = {
 						const membersIds = members.map(member => member.user.id);
 						const loggedUsers = await interaction.client.Users.findAll({ where: { user: { [Sequelize.Op.in]: membersIds } } });
 
+						const artistEmbed = new EmbedBuilder()
+							.setColor(0xC3000D)
+							.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() });
+
 						const promises = [];
 						for (let i = 0; i < loggedUsers.length; i++) {
 							const data = Lastfm.getArtistScrobble(await interaction.client.users.fetch(loggedUsers[i].dataValues.user), loggedUsers[i].dataValues.lastfm, artist);
 							promises.push(data);
+							if (i == 24) {
+								artistEmbed.setFooter({ text: 'Displaying only max 25 users. Do not use this command on large servers!' });
+								break;
+							}
 						}
 
 						const artistScrobbles = await Promise.all(promises).catch((error) => {
@@ -422,10 +430,6 @@ module.exports = {
 						}
 
 						artistsForEmbed.sort((a, b) => b.playcount - a.playcount);
-
-						const artistEmbed = new EmbedBuilder()
-							.setColor(0xC3000D)
-							.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() });
 
 						let descriptionString = `### [${artist}](https://www.last.fm/music/${querystring.escape(artist)}) - listeners:`;
 						for (let i = 0; i < artistsForEmbed.length; i++) {
