@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { generateDependencyReport } = require('@discordjs/voice');
 require('dotenv').config();
 const { exec } = require('child_process');
@@ -57,7 +57,11 @@ module.exports = {
 					return interaction.editReply('Termux compatibility is disabled in config.');
 				}
 
-				let infoString = '';
+				const embed = new EmbedBuilder()
+					.setTimestamp(new Date())
+					.setTitle('System stats (Termux):');
+
+				let isFail = true;
 				let battery = '';
 				try {
 					const { error, stdout, stderr } = await execPromise('termux-battery-status');
@@ -69,7 +73,8 @@ module.exports = {
 					}
 					console.log(stdout);
 					battery = JSON.parse(stdout);
-					infoString += `### Battery \n├ **${battery.percentage}%**\n├ ${Number(battery.temperature).toFixed(1)} °C\n├ ${battery.plugged}\n└ ${battery.status}\n`;
+					embed.addFields({ name: 'Battery:', value: `**${battery.percentage}%**, ${Number(battery.temperature).toFixed(1)}°C (${battery.plugged}, ${battery.status})` });
+					isFail = false;
 				} catch (error) {
 					console.log(`error: ${error}`);
 				}
@@ -83,15 +88,14 @@ module.exports = {
 						console.log(stderr);
 					}
 					console.log(stdout);
-					const uptime = stdout.split(',');
-					uptime[0] = uptime[0].slice(2);
-					infoString += `### Uptime \n├${uptime[0]}\n├${uptime[1]}\n└${uptime[2]}`;
+					embed.addFields({ name: 'Uptime:', value: stdout.slice(2) });
+					isFail = false;
 				} catch (error) {
 					console.log(`error: ${error}`);
 				}
 
 				try {
-					const { error, stdout, stderr } = await execPromise(`free -m --si | awk 'FNR == 2 {print $3" MB / "$2" MB"}'`);
+					const { error, stdout, stderr } = await execPromise('free -m --si | awk \'FNR == 2 {print $3" MB / "$2" MB"}\'');
 					if (error) {
 						console.log(error);
 					}
@@ -99,23 +103,29 @@ module.exports = {
 						console.log(stderr);
 					}
 					console.log(stdout);
-					infoString += `### RAM\n└ ${stdout}\n`;
+					embed.addFields({ name: 'RAM:', value: stdout });
+					isFail = false;
 				} catch (error) {
 					console.log(`error: ${error}`);
 				}
 
-				if (infoString == '') {
+				if (isFail) {
 					return interaction.editReply('Failed to show any Termux info.');
 				}
 
-				return interaction.editReply(infoString);
+				return interaction.editReply({ content: '', embeds: [embed] });
 			}
 
 			case 'voice': {
 				await interaction.deferReply();
 				const report = generateDependencyReport();
 				console.log(report);
-				return interaction.editReply(report);
+
+				const embed = new EmbedBuilder()
+					.setTitle('Voice internals debug info:')
+					.setDescription('```' + report + '```');
+
+				return interaction.editReply({ content: '', embeds: [embed] });
 			}
 
 			default: {
