@@ -49,11 +49,14 @@ module.exports = {
 
 			console.log(stdout);
 			if (stdout.includes('File is larger than max-filesize')) {
-				return interaction.editReply(`\`${url}\` - Download failed (╥﹏╥). Max file size exceeded.`);
+				return interaction.editReply(`\`${url}\` - ❌ Download failed (╥﹏╥). Max file size exceeded.`);
 			}
 		} catch (error) {
+			if (error.stderr.includes('ERROR: Unsupported URL')) {
+				return interaction.editReply(`\`${url}\` - ❌ Download failed (╥﹏╥). Unsupported URL.`);
+			}
 			console.log(`error: ${error.message}`);
-			return interaction.editReply(`\`${url}\` - Download failed (╥﹏╥)`);
+			return interaction.editReply(`\`${url}\` - ❌ Download failed (╥﹏╥)`);
 		}
 
 		const filePath = `./tmpfiles/${name}.mp4`;
