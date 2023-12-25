@@ -31,9 +31,11 @@ module.exports = {
 					option.setName('type')
 						.setDescription('Activity type.')
 						.addChoices(
+							{ name: 'Playing', value: 'Playing' },
 							{ name: 'Watching', value: 'Watching' },
 							{ name: 'Listening', value: 'Listening' },
 							{ name: 'Competing', value: 'Competing' },
+							{ name: 'Custom', value: 'Custom' },
 						)),
 		)
 		.addSubcommand(subcommand =>
@@ -61,7 +63,8 @@ module.exports = {
 				const type = interaction.options.getString('type');
 
 				if (!type) {
-					await interaction.client.user.setActivity(str);
+					// await interaction.client.user.setActivity(str);
+					await interaction.client.user.setActivity(str, { type: ActivityType.Custom });
 					return interaction.editReply(`Bot activity set to: **${str}**.`);
 				}
 
@@ -75,6 +78,10 @@ module.exports = {
 					await interaction.client.user.setActivity(str, { type: ActivityType.Listening });
 				} else if (type == 'Competing') {
 					await interaction.client.user.setActivity(str, { type: ActivityType.Competing });
+				} else if (type == 'Playing') {
+					await interaction.client.user.setActivity(str, { type: ActivityType.Playing });
+				} else if (type == 'Custom') {
+					await interaction.client.user.setActivity(str, { type: ActivityType.Custom });
 				}
 
 				return interaction.editReply(`Bot activity type set to: **${type}**. Bot status set to: **${str}**.`);
