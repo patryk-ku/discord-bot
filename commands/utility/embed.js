@@ -28,6 +28,18 @@ module.exports = {
 			return;
 		}
 
+		// Blacklisted urls (TODO: add more later)
+		const blacklist = [
+			{ name: 'YouTube', regex: new RegExp(/^https?:\/\/(www\.)?(m\.)?(youtube|youtu)\.(com|be)(?:\/.*)?$/gm) },
+			{ name: 'Vimeo', regex: new RegExp(/^https?:\/\/(www\.)?(player\.)?(vimeo)\.com(?:\/.*)?$/gm) },
+			{ name: 'Twitch', regex: new RegExp(/^https?:\/\/(www\.)?(clips\.)?(twitch)\.tv(?:\/.*)?$/gm) },
+		];
+		for (const site of blacklist) {
+			if (site.regex.test(url)) {
+				return interaction.editReply(`\`${url}\` download canceled: You do not need to use a bot to embed video from the **${site.name}** because videos from this site embed correctly on discord.`);
+			}
+		}
+
 		await interaction.editReply(`\`${url}\` is downloading...`);
 		const name = String(Date.now());
 		console.log(`ID: ${name}`);
@@ -102,7 +114,13 @@ module.exports = {
 			for (const [index, fragment] of fragmentsList.entries()) {
 				const file = new AttachmentBuilder(fragment);
 				try {
-					await interaction.followUp({ content: `## Part ${index + 1}`, files: [file] });
+					if (index == 0) {
+						await interaction.editReply({ content: `## Requested video:\n\`\`\`${url}\`\`\`\n## Part 1`, files: [file] });
+					} else if (index == fragmentsList.length - 1) {
+						await interaction.followUp({ content: `## Part ${index + 1} (last)`, files: [file] });
+					} else {
+						await interaction.followUp({ content: `## Part ${index + 1}`, files: [file] });
+					}
 					console.log(`File sent succesfully: ${fragment}`);
 				} catch (error) {
 					await interaction.followUp(`\`${url}\` - Error, failed to upload **part ${index}** of video to discord servers. Try again.`);
@@ -110,7 +128,7 @@ module.exports = {
 				}
 			}
 
-			await interaction.followUp('Entire video sent succesfully.');
+			// await interaction.followUp('Entire video sent succesfully.');
 			console.log('Entire video sent succesfully.');
 			helperFunctions.deleteFile(filePath);
 			helperFunctions.deleteMultipleFiles(fragmentsList);
@@ -122,7 +140,8 @@ module.exports = {
 		try {
 			console.log(`Uploading file: ${filePath}`);
 			await interaction.editReply('Uploading file to discord...');
-			await interaction.editReply({ content: `\`${url}\``, files: [file] });
+			// await interaction.editReply({ content: `\`${url}\``, files: [file] });
+			await interaction.editReply({ content: `## Requested video:\n\`\`\`${url}\`\`\``, files: [file] });
 			console.log('File sent succesfully');
 		} catch (error) {
 			await interaction.editReply(`\`${url}\` - Error, failed to upload video to discord servers.`);
