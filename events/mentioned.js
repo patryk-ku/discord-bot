@@ -9,73 +9,130 @@ module.exports = {
 			return;
 		}
 
+		// Ignore messages from bots
 		if (message.author.bot) {
 			return;
 		}
 
-		if (message.mentions.has(message.client.user, { ignoreEveryone: true })) {
-			try {
-				console.log(`-> New interaction: "AI" on [${new Date().toString()}]`);
-				message.channel.sendTyping();
-				const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-				const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+		// React only for mentions from users but not @everyone and @here
+		if (!message.mentions.has(message.client.user, { ignoreEveryone: true })) {
+			return;
+		}
 
-				let aiSetting = '';
-				if (!process.env.GEMINI_CHAT_SETTING) {
-					aiSetting = 'Act as typical Discord user.';
-				} else {
-					aiSetting = process.env.GEMINI_CHAT_SETTING;
-				}
+		console.log(
+			`-> New interaction: "AI" by ${message.author.username} on [${new Date().toString()}]`
+		);
+		message.channel.sendTyping();
 
-				const safetySettings = [
-					{
-						category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-						threshold: HarmBlockThreshold.BLOCK_NONE,
-					},
-					{
-						category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-						threshold: HarmBlockThreshold.BLOCK_NONE,
-					},
-					{
-						category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-						threshold: HarmBlockThreshold.BLOCK_NONE,
-					},
-					{
-						category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-						threshold: HarmBlockThreshold.BLOCK_NONE,
-					},
-				];
+		// Remove bot mention from message and reject if empty msg
+		const msg = message.content
+			.replaceAll(/<@!?\d+>/g, '')
+			.trim()
+			.replaceAll('  ', ' ');
+		if (msg.length == 0) {
+			return;
+		}
 
-				const chat = model.startChat({
-					history: [
-						{
-							role: 'user',
-							parts: aiSetting,
-						},
+		const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+		const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+		// Set AI personality according to .env settings
+		let aiSetting = '';
+		if (!process.env.GEMINI_CHAT_SETTING) {
+			aiSetting = 'Act as typical Discord user.';
+		} else {
+			aiSetting = process.env.GEMINI_CHAT_SETTING;
+		}
+
+		// Disable all safety settings
+		const safetySettings = [
+			{
+				category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+				threshold: HarmBlockThreshold.BLOCK_NONE,
+			},
+			{
+				category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+				threshold: HarmBlockThreshold.BLOCK_NONE,
+			},
+			{
+				category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+				threshold: HarmBlockThreshold.BLOCK_NONE,
+			},
+			{
+				category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+				threshold: HarmBlockThreshold.BLOCK_NONE,
+			},
+		];
+
+		// Get user chat history from bot database
+		const chatHistory = await message.client.AiChatHistory.findAll({
+			where: { user: message.author.id },
+			limit: 5,
+			raw: true,
+			order: [['id', 'DESC']],
+		});
+		const previousChat = [];
+		if (chatHistory != null) {
+			if (chatHistory.length > 0) {
+				for (const chat of chatHistory) {
+					previousChat.push(
 						{
 							role: 'model',
-							parts: 'Ok.',
+							parts: chat.answer,
 						},
-					],
-					generationConfig: {
-						maxOutputTokens: 100,
-					},
-					safetySettings,
-				});
-
-				const msg = message.content.replaceAll(/<@!?\d+>/g, '');
-				const result = await chat.sendMessage(msg);
-
-				const response = await result.response.text();
-
-				if (response.length > 0) {
-					return await message.channel.send(response);
-				} else {
-					return await message.channel.send('idk error');
+						{
+							role: 'user',
+							parts: chat.question,
+						}
+					);
 				}
-			} catch (error) {
-				console.log(error);
 			}
+		}
+		previousChat.reverse();
+		// console.log(previousChat);
+
+		const chat = model.startChat({
+			history: [
+				{
+					role: 'user',
+					parts: aiSetting,
+				},
+				{
+					role: 'model',
+					parts: 'Ok.',
+				},
+				...previousChat,
+			],
+			generationConfig: {
+				maxOutputTokens: 400,
+			},
+			safetySettings,
+		});
+
+		try {
+			const result = await chat.sendMessage(msg);
+			const response = await result.response.text();
+
+			if (response.length > 0) {
+				// Save message to chat history
+				try {
+					await message.client.AiChatHistory.create({
+						user: message.author.id,
+						question: msg,
+						answer: response,
+					});
+				} catch (error) {
+					console.log(error);
+				}
+
+				// And reply to user
+				return await message.channel.send(response);
+			} else {
+				console.log(result.response);
+				return await message.channel.send('**ERROR** 💀');
+			}
+		} catch (error) {
+			return message.channel.send('```' + error.message + '```');
 		}
 	},
 };
