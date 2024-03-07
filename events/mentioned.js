@@ -66,8 +66,9 @@ module.exports = {
 
 		// Get user chat history from bot database
 		const chatHistory = await message.client.AiChatHistory.findAll({
-			where: { user: message.author.id },
-			limit: 5,
+			// where: { user: message.author.id },
+			where: { guild: message.guild.id },
+			limit: 8,
 			raw: true,
 			order: [['id', 'DESC']],
 		});

@@ -45,7 +45,7 @@ client.Users = client.sequelize.define(
 client.AiChatHistory = client.sequelize.define(
 	'ai_chat_history',
 	{
-		user: Sequelize.STRING,
+		guild: Sequelize.STRING,
 		question: Sequelize.TEXT,
 		answer: Sequelize.TEXT,
 	},
