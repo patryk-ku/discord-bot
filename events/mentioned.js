@@ -24,8 +24,17 @@ module.exports = {
 		);
 		message.channel.sendTyping();
 
+		// Author name
+		// console.log(message.author);
+		let userName = message.author.username;
+		if (message.author.globalName) {
+			if (message.author.globalName.length > 0) {
+				userName = message.author.globalName;
+			}
+		}
+
 		// Remove bot mention from message and reject if empty msg
-		const msg = message.content
+		const msg = `${userName}: ${message.content}`
 			.replaceAll(/<@!?\d+>/g, '')
 			.trim()
 			.replaceAll('  ', ' ');
@@ -68,7 +77,7 @@ module.exports = {
 		const chatHistory = await message.client.AiChatHistory.findAll({
 			// where: { user: message.author.id },
 			where: { guild: message.guild.id },
-			limit: 8,
+			limit: 10,
 			raw: true,
 			order: [['id', 'DESC']],
 		});
@@ -90,7 +99,7 @@ module.exports = {
 			}
 		}
 		previousChat.reverse();
-		// console.log(previousChat);
+		console.log(previousChat);
 
 		const chat = model.startChat({
 			history: [
@@ -118,7 +127,7 @@ module.exports = {
 				// Save message to chat history
 				try {
 					await message.client.AiChatHistory.create({
-						user: message.author.id,
+						guild: message.guild.id,
 						question: msg,
 						answer: response,
 					});

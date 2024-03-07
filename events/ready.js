@@ -11,7 +11,7 @@ module.exports = {
 			console.log('Connection to database has been established successfully.');
 			// await client.Users.sync({ alter: true });
 			await client.Users.sync();
-			await client.AiChatHistory.sync({ alter: true });
+			await client.AiChatHistory.sync();
 		} catch (error) {
 			console.error('Unable to connect to the database:', error);
 		}
