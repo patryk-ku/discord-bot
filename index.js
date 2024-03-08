@@ -15,6 +15,7 @@ const client = new Client({
 		GatewayIntentBits.GuildMembers,
 		GatewayIntentBits.GuildVoiceStates,
 		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
 	],
 });
 
@@ -42,12 +43,12 @@ client.Users = client.sequelize.define(
 	}
 );
 
-client.AiChatHistory = client.sequelize.define(
-	'ai_chat_history',
+client.geminiChat = client.sequelize.define(
+	'gemini_chat',
 	{
 		guild: Sequelize.STRING,
-		question: Sequelize.TEXT,
-		answer: Sequelize.TEXT,
+		user: Sequelize.TEXT,
+		model: Sequelize.TEXT,
 	},
 	{
 		timestamps: false,

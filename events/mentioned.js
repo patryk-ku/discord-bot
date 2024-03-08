@@ -22,10 +22,8 @@ module.exports = {
 		console.log(
 			`-> New interaction: "AI" by ${message.author.username} on [${new Date().toString()}]`
 		);
-		message.channel.sendTyping();
 
 		// Author name
-		// console.log(message.author);
 		let userName = message.author.username;
 		if (message.author.globalName) {
 			if (message.author.globalName.length > 0) {
@@ -34,24 +32,17 @@ module.exports = {
 		}
 
 		// Remove bot mention from message and reject if empty msg
-		const msg = `${userName}: ${message.content}`
+		let msg = `${message.content}`
 			.replaceAll(/<@!?\d+>/g, '')
 			.trim()
 			.replaceAll('  ', ' ');
 		if (msg.length == 0) {
 			return;
 		}
+		// msg = `${userName}: ${msg}`;
+		message.channel.sendTyping();
 
 		const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-		const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
-		// Set AI personality according to .env settings
-		let aiSetting = '';
-		if (!process.env.GEMINI_CHAT_SETTING) {
-			aiSetting = 'Act as typical Discord user.';
-		} else {
-			aiSetting = process.env.GEMINI_CHAT_SETTING;
-		}
 
 		// Disable all safety settings
 		const safetySettings = [
@@ -73,11 +64,115 @@ module.exports = {
 			},
 		];
 
+		const generationConfig = {
+			maxOutputTokens: 400,
+		};
+
+		// Set AI personality according to .env settings
+		let chatSetting = '';
+		if (!process.env.GEMINI_CHAT_SETTING) {
+			chatSetting =
+				'You have just logged into a web chat and are answering questions from other users. Questions to you will be in the form user_name: content_message. Try to distinguish individual users by their names. Reply to them with the content of the message itself without mentioning your nickname.';
+		} else {
+			chatSetting = process.env.GEMINI_CHAT_SETTING;
+		}
+
+		let imageSetting = '';
+		if (!process.env.GEMINI_IMAGE_SETTING) {
+			imageSetting =
+				'You have just logged into a web chat and are answering questions from other users. Questions to you will be in the form user_name: content_message. Try to distinguish individual users by their names. Reply to them with the content of the message itself without mentioning your nickname.';
+		} else {
+			imageSetting = process.env.GEMINI_IMAGE_SETTING;
+		}
+
+		// Check if message contains any file and then use different model
+		const file = message.attachments.first()?.url;
+		if (file) {
+			// console.log(message.attachments.first());
+			// Check image type and file size
+			const allowedImageTypes = [
+				'image/png',
+				'image/jpeg',
+				'image/webp',
+				'image/heic',
+				'image/heif',
+			];
+			// max 4 MB for enire request so I let 2,75 for image because of base64 conversion rate
+			const maxImageSize = 1024 * 1024 * 2.75;
+			if (Number(message.attachments.first().size) > maxImageSize) {
+				return await message.channel.send('File too big. (Max file size is 2,75 MB)');
+			}
+			if (!allowedImageTypes.includes(message.attachments.first().contentType)) {
+				return await message.channel.send(
+					'File type not supported. (Allowed file types: png, jpg, webp, heic, heif'
+				);
+			}
+
+			// Donwnload image to buffer
+			let buffer;
+			try {
+				const response = await fetch(file);
+				buffer = await response.arrayBuffer();
+			} catch (error) {
+				console.log(error);
+				return message.channel.send('Error: Failed to download image.');
+			}
+
+			const model = genAI.getGenerativeModel({
+				model: 'gemini-pro-vision',
+				generationConfig,
+				safetySettings,
+			});
+			const image = {
+				inlineData: {
+					data: Buffer.from(buffer).toString('base64'),
+					mimeType: 'image/png',
+				},
+			};
+
+			let entireResponse = '';
+			let isFirstChunk = true;
+			let msgRef;
+			try {
+				const msgEdit = `${imageSetting}${msg}`;
+				const result = await model.generateContentStream([msgEdit, image]);
+
+				// Update response on new data
+				for await (const chunk of result.stream) {
+					entireResponse += chunk.text();
+					if (isFirstChunk) {
+						msgRef = await message.channel.send(entireResponse);
+						isFirstChunk = false;
+					} else {
+						msgRef.edit(entireResponse);
+					}
+				}
+
+				// Save message to chat history
+				if (entireResponse.length > 0) {
+					try {
+						await message.client.geminiChat.create({
+							guild: message.guild.id,
+							user: `${userName}: ${msg}`,
+							model: entireResponse,
+						});
+					} catch (error) {
+						console.log(error);
+					}
+				}
+				return;
+			} catch (error) {
+				console.log(error);
+				return await message.channel.send('```' + error.message + '```');
+			}
+		}
+
+		const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
 		// Get user chat history from bot database
-		const chatHistory = await message.client.AiChatHistory.findAll({
-			// where: { user: message.author.id },
+		const chatHistory = await message.client.geminiChat.findAll({
 			where: { guild: message.guild.id },
-			limit: 10,
+			limit: 40,
 			raw: true,
 			order: [['id', 'DESC']],
 		});
@@ -88,11 +183,11 @@ module.exports = {
 					previousChat.push(
 						{
 							role: 'model',
-							parts: chat.answer,
+							parts: chat.model,
 						},
 						{
 							role: 'user',
-							parts: chat.question,
+							parts: chat.user,
 						}
 					);
 				}
@@ -105,7 +200,7 @@ module.exports = {
 			history: [
 				{
 					role: 'user',
-					parts: aiSetting,
+					parts: chatSetting,
 				},
 				{
 					role: 'model',
@@ -119,30 +214,63 @@ module.exports = {
 			safetySettings,
 		});
 
+		// Finally send request to gemini api
+		let entireResponse = '';
+		let isFirstChunk = true;
+		let msgRef;
+		msg = `${userName}: ${msg}`;
 		try {
-			const result = await chat.sendMessage(msg);
-			const response = await result.response.text();
+			const result = await chat.sendMessageStream(msg);
 
-			if (response.length > 0) {
-				// Save message to chat history
+			// Update response on new data
+			for await (const chunk of result.stream) {
+				entireResponse += chunk.text();
+				if (isFirstChunk) {
+					msgRef = await message.channel.send(entireResponse);
+					isFirstChunk = false;
+				} else {
+					msgRef.edit(entireResponse);
+				}
+			}
+
+			// Save message to chat history
+			if (entireResponse.length > 0) {
 				try {
-					await message.client.AiChatHistory.create({
+					await message.client.geminiChat.create({
 						guild: message.guild.id,
-						question: msg,
-						answer: response,
+						user: msg,
+						model: entireResponse,
 					});
 				} catch (error) {
 					console.log(error);
 				}
-
-				// And reply to user
-				return await message.channel.send(response);
-			} else {
-				console.log(result.response);
-				return await message.channel.send('**ERROR** 💀');
 			}
+			return;
+
+			// const result = await chat.sendMessage(msg);
+			// const response = await result.response.text();
+
+			// if (response.length > 0) {
+			// 	// Save message to chat history
+			// 	try {
+			// 		await message.client.geminiChat.create({
+			// 			guild: message.guild.id,
+			// 			user: msg,
+			// 			model: response,
+			// 		});
+			// 	} catch (error) {
+			// 		console.log(error);
+			// 	}
+
+			// 	// And reply to user
+			// 	return await message.channel.send(response);
+			// } else {
+			// 	console.log(result.response);
+			// 	return await message.channel.send('**ERROR** 💀');
+			// }
 		} catch (error) {
-			return message.channel.send('```' + error.message + '```');
+			console.log(error);
+			return await message.channel.send('```' + error.message + '```');
 		}
 	},
 };
