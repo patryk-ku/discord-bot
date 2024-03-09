@@ -10,8 +10,9 @@ module.exports = {
 			await client.sequelize.authenticate();
 			console.log('Connection to database has been established successfully.');
 			// await client.Users.sync({ alter: true });
-			await client.Users.sync();
-			await client.geminiChat.sync();
+			// await client.Users.sync();
+			// await client.geminiChat.sync();
+			await client.sequelize.sync();
 		} catch (error) {
 			console.error('Unable to connect to the database:', error);
 		}

@@ -55,6 +55,18 @@ client.geminiChat = client.sequelize.define(
 	}
 );
 
+client.geminiChatArchive = client.sequelize.define(
+	'gemini_chat_archive',
+	{
+		guild: Sequelize.STRING,
+		user: Sequelize.TEXT,
+		model: Sequelize.TEXT,
+	},
+	{
+		timestamps: false,
+	}
+);
+
 // Commands handler
 client.commands = new Collection();
 const foldersPath = path.join(__dirname, 'commands');

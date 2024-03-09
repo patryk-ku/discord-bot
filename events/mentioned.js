@@ -1,6 +1,7 @@
 const { Events } = require('discord.js');
 require('dotenv').config();
-const { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } = require('@google/generative-ai');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Gemini = require('../helpers/gemini');
 
 module.exports = {
 	name: Events.MessageCreate,
@@ -45,28 +46,9 @@ module.exports = {
 		const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 		// Disable all safety settings
-		const safetySettings = [
-			{
-				category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-			{
-				category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-				threshold: HarmBlockThreshold.BLOCK_NONE,
-			},
-		];
+		const safetySettings = Gemini.safetySettings;
 
-		const generationConfig = {
-			maxOutputTokens: 400,
-		};
+		const generationConfig = Gemini.generationConfig;
 
 		// Set AI personality according to .env settings
 		let chatSetting = '';
@@ -89,81 +71,32 @@ module.exports = {
 		const file = message.attachments.first()?.url;
 		if (file) {
 			// console.log(message.attachments.first());
-			// Check image type and file size
-			const allowedImageTypes = [
-				'image/png',
-				'image/jpeg',
-				'image/webp',
-				'image/heic',
-				'image/heif',
-			];
-			// max 4 MB for enire request so I let 2,75 for image because of base64 conversion rate
-			const maxImageSize = 1024 * 1024 * 2.75;
-			if (Number(message.attachments.first().size) > maxImageSize) {
-				return await message.channel.send('File too big. (Max file size is 2,75 MB)');
-			}
-			if (!allowedImageTypes.includes(message.attachments.first().contentType)) {
-				return await message.channel.send(
-					'File type not supported. (Allowed file types: png, jpg, webp, heic, heif'
+			try {
+				const response = await Gemini.imagePrompt(
+					`${imageSetting}${msg}`,
+					message.attachments.first()
 				);
-			}
-
-			// Donwnload image to buffer
-			let buffer;
-			try {
-				const response = await fetch(file);
-				buffer = await response.arrayBuffer();
-			} catch (error) {
-				console.log(error);
-				return message.channel.send('Error: Failed to download image.');
-			}
-
-			const model = genAI.getGenerativeModel({
-				model: 'gemini-pro-vision',
-				generationConfig,
-				safetySettings,
-			});
-			const image = {
-				inlineData: {
-					data: Buffer.from(buffer).toString('base64'),
-					mimeType: 'image/png',
-				},
-			};
-
-			let entireResponse = '';
-			let isFirstChunk = true;
-			let msgRef;
-			try {
-				const msgEdit = `${imageSetting}${msg}`;
-				const result = await model.generateContentStream([msgEdit, image]);
-
-				// Update response on new data
-				for await (const chunk of result.stream) {
-					entireResponse += chunk.text();
-					if (isFirstChunk) {
-						msgRef = await message.channel.send(entireResponse);
-						isFirstChunk = false;
-					} else {
-						msgRef.edit(entireResponse);
-					}
-				}
+				await message.channel.send(response);
 
 				// Save message to chat history
-				if (entireResponse.length > 0) {
-					try {
-						await message.client.geminiChat.create({
-							guild: message.guild.id,
-							user: `${userName}: ${msg}`,
-							model: entireResponse,
-						});
-					} catch (error) {
-						console.log(error);
-					}
+				try {
+					await message.client.geminiChat.create({
+						guild: message.guild.id,
+						user: `${userName}: ${msg}`,
+						model: response,
+					});
+				} catch (error) {
+					console.log(error);
 				}
+
 				return;
 			} catch (error) {
 				console.log(error);
-				return await message.channel.send('```' + error.message + '```');
+				if (error.text) {
+					return await message.channel.send(error.text);
+				} else {
+					return await message.channel.send('```' + error.message + '```');
+				}
 			}
 		}
 
@@ -194,7 +127,7 @@ module.exports = {
 			}
 		}
 		previousChat.reverse();
-		console.log(previousChat);
+		// console.log(previousChat);
 
 		const chat = model.startChat({
 			history: [
@@ -220,11 +153,23 @@ module.exports = {
 		let msgRef;
 		msg = `${userName}: ${msg}`;
 		try {
-			const result = await chat.sendMessageStream(msg);
+			const result = await chat.sendMessageStream(msg).catch(async (error) => {
+				console.log(error);
+				// Retry request
+				msgRef = await message.channel.send(
+					`\`\`\`${error}\`\`\`\n**Please Wait**, retrying request.\n*What an epic QOL update isn't it xD?*`
+				);
+				isFirstChunk = false;
+				chat.sendMessageStream(msg);
+			});
 
 			// Update response on new data
 			for await (const chunk of result.stream) {
 				entireResponse += chunk.text();
+				if (entireResponse.length == 0) {
+					console.log(result);
+				}
+
 				if (isFirstChunk) {
 					msgRef = await message.channel.send(entireResponse);
 					isFirstChunk = false;
@@ -246,28 +191,6 @@ module.exports = {
 				}
 			}
 			return;
-
-			// const result = await chat.sendMessage(msg);
-			// const response = await result.response.text();
-
-			// if (response.length > 0) {
-			// 	// Save message to chat history
-			// 	try {
-			// 		await message.client.geminiChat.create({
-			// 			guild: message.guild.id,
-			// 			user: msg,
-			// 			model: response,
-			// 		});
-			// 	} catch (error) {
-			// 		console.log(error);
-			// 	}
-
-			// 	// And reply to user
-			// 	return await message.channel.send(response);
-			// } else {
-			// 	console.log(result.response);
-			// 	return await message.channel.send('**ERROR** 💀');
-			// }
 		} catch (error) {
 			console.log(error);
 			return await message.channel.send('```' + error.message + '```');
