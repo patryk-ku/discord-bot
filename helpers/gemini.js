@@ -70,6 +70,10 @@ exports.imagePrompt = async (prompt, attachment) => {
 			}
 			reply += '```';
 			throw { text: reply };
+		} else if (error.response.promptFeedback?.blockReason == 'OTHER') {
+			// const reply = '## ' + error.message;
+			const reply = '### Response was blocked due to OTHER reason.';
+			throw { text: reply };
 		}
 
 		throw error;

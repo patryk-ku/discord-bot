@@ -157,17 +157,31 @@ module.exports = {
 				console.log(error);
 				// Retry request
 				msgRef = await message.channel.send(
-					`\`\`\`${error}\`\`\`\n**Please Wait**, retrying request.\n*What an epic QOL update isn't it xD?*`
+					`\`\`\`${error}\`\`\`\n## Please Wait, retrying request...\n*What an epic QOL update isn't it xD?*`
 				);
 				isFirstChunk = false;
-				chat.sendMessageStream(msg);
+				return chat.sendMessageStream(msg);
 			});
 
 			// Update response on new data
 			for await (const chunk of result.stream) {
+				if (chunk.promptFeedback?.blockReason == 'SAFETY') {
+					let reply = '### Response was blocked because of safety reasons:\n```';
+					for (const rating of chunk.promptFeedback.safetyRatings) {
+						reply += `\n- ${rating.category}: ${rating.probability}`;
+					}
+					reply += '```';
+					throw { text: reply };
+				} else if (chunk.promptFeedback?.blockReason == 'OTHER') {
+					const reply =
+						'### Response was blocked due to OTHER reason. Please wait, the police are coming.';
+					throw { text: reply };
+				}
+
 				entireResponse += chunk.text();
 				if (entireResponse.length == 0) {
-					console.log(result);
+					console.log(chunk);
+					continue;
 				}
 
 				if (isFirstChunk) {
@@ -193,7 +207,37 @@ module.exports = {
 			return;
 		} catch (error) {
 			console.log(error);
-			return await message.channel.send('```' + error.message + '```');
+
+			if (error.text) {
+				return await message.channel.send(error.text);
+			}
+
+			if (error.response?.promptFeedback?.blockReason == 'SAFETY') {
+				let reply = 'Response was blocked because of safety reasons:\n```';
+				for (const rating of error.response.promptFeedback.safetyRatings) {
+					reply += `\n- ${rating.category}: ${rating.probability}`;
+				}
+				reply += '```';
+				return await message.channel.send(reply);
+			} else if (error.response?.candidates[0]?.finishReason == 'SAFETY') {
+				return await message.channel.send(
+					'### Response was blocked due to safety reasons.'
+				);
+			} else if (error.response?.promptFeedback?.blockReason == 'OTHER') {
+				return await message.channel.send(
+					'### Response was blocked due to OTHER reason. Please wait, the police are coming.'
+				);
+			} else if (error.response?.candidates[0]?.finishReason == 'OTHER') {
+				return await message.channel.send(
+					'### Response was blocked due to OTHER reason. Please wait, the police are coming.'
+				);
+			}
+
+			if (isFirstChunk) {
+				return await message.channel.send('```' + error + '```');
+			} else {
+				msgRef.edit('```' + error + '```');
+			}
 		}
 	},
 };
