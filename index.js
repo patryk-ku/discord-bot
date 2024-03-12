@@ -4,6 +4,7 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
 require('dotenv').config();
 const Sequelize = require('sequelize');
 // const { DataTypes } = require('sequelize');
+const dns = require('dns');
 const { exec } = require('child_process');
 const util = require('util');
 const execPromise = util.promisify(exec);
@@ -106,7 +107,10 @@ for (const file of eventFiles) {
 // Log in to Discord with your client's token
 client.login(process.env.DISCORD_TOKEN);
 
-// Scheduled tasks:
+// Scheduled tasks
+// TODO: move this to separate file
+
+// Termux low battery notification
 async function termuxBatteryNotif() {
 	let battery = '';
 	try {
@@ -129,6 +133,26 @@ async function termuxBatteryNotif() {
 		console.log(`error: ${error}`);
 	}
 }
-if (process.env.TERMUX) {
+if (process.env.TERMUX && process.env.TERMUX_LOW_BATTERY_NOTIF) {
 	setInterval(termuxBatteryNotif, 1000 * 60 * 60);
+}
+
+// Restart on lost internet connection
+let isPreviousInternetCheckSuccessful = true;
+async function checkForInternet() {
+	dns.promises
+		.lookupService('8.8.8.8', 53)
+		.then(() => {
+			if (!isPreviousInternetCheckSuccessful) {
+				console.log('Internet connection restored, restarting...');
+				process.exit();
+			}
+		})
+		.catch(() => {
+			console.log('Internet connection lost, checking again in 5 min.');
+			isPreviousInternetCheckSuccessful = false;
+		});
+}
+if (process.env.INTERNET_LOSS_RESTART) {
+	setInterval(checkForInternet, 1000 * 60 * 5);
 }
