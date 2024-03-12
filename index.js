@@ -14,6 +14,8 @@ const client = new Client({
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMembers,
 		GatewayIntentBits.GuildVoiceStates,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
 	],
 });
 
@@ -41,6 +43,30 @@ client.Users = client.sequelize.define(
 	}
 );
 
+client.geminiChat = client.sequelize.define(
+	'gemini_chat',
+	{
+		guild: Sequelize.STRING,
+		user: Sequelize.TEXT,
+		model: Sequelize.TEXT,
+	},
+	{
+		timestamps: false,
+	}
+);
+
+client.geminiChatArchive = client.sequelize.define(
+	'gemini_chat_archive',
+	{
+		guild: Sequelize.STRING,
+		user: Sequelize.TEXT,
+		model: Sequelize.TEXT,
+	},
+	{
+		timestamps: false,
+	}
+);
+
 // Commands handler
 client.commands = new Collection();
 const foldersPath = path.join(__dirname, 'commands');
@@ -48,9 +74,7 @@ const commandFolders = fs.readdirSync(foldersPath);
 
 for (const folder of commandFolders) {
 	const commandsPath = path.join(foldersPath, folder);
-	const commandFiles = fs
-		.readdirSync(commandsPath)
-		.filter((file) => file.endsWith('.js'));
+	const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith('.js'));
 	for (const file of commandFiles) {
 		const filePath = path.join(commandsPath, file);
 		const command = require(filePath);
@@ -67,9 +91,7 @@ for (const folder of commandFolders) {
 
 // Events handler
 const eventsPath = path.join(__dirname, 'events');
-const eventFiles = fs
-	.readdirSync(eventsPath)
-	.filter((file) => file.endsWith('.js'));
+const eventFiles = fs.readdirSync(eventsPath).filter((file) => file.endsWith('.js'));
 
 for (const file of eventFiles) {
 	const filePath = path.join(eventsPath, file);
@@ -88,9 +110,7 @@ client.login(process.env.DISCORD_TOKEN);
 async function termuxBatteryNotif() {
 	let battery = '';
 	try {
-		const { error, stdout, stderr } = await execPromise(
-			'termux-battery-status'
-		);
+		const { error, stdout, stderr } = await execPromise('termux-battery-status');
 		if (error) {
 			console.log(error);
 		}
