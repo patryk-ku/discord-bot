@@ -12,7 +12,7 @@ module.exports = {
 	async execute(interaction) {
 		if (!process.env.GEMINI_API_KEY) {
 			return interaction.reply(
-				'Gemini AI commands are **disabled** because the bot owner did not provided an Gemini API token.'
+				'Gemini AI commands are **disabled** because the bot owner did not provided an Gemini API key.'
 			);
 		}
 

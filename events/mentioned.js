@@ -40,15 +40,13 @@ module.exports = {
 		if (msg.length == 0) {
 			return;
 		}
-		// msg = `${userName}: ${msg}`;
 		message.channel.sendTyping();
 
 		const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 		// Disable all safety settings
 		const safetySettings = Gemini.safetySettings;
-
-		const generationConfig = Gemini.generationConfig;
+		// const generationConfig = Gemini.generationConfig;
 
 		// Set AI personality according to .env settings
 		let chatSetting = '';
@@ -62,7 +60,7 @@ module.exports = {
 		let imageSetting = '';
 		if (!process.env.GEMINI_IMAGE_SETTING) {
 			imageSetting =
-				'You have just logged into a web chat and are answering questions from other users. Questions to you will be in the form user_name: content_message. Try to distinguish individual users by their names. Reply to them with the content of the message itself without mentioning your nickname.';
+				'You have just logged into a web chat and are answering questions from other users.';
 		} else {
 			imageSetting = process.env.GEMINI_IMAGE_SETTING;
 		}
@@ -70,7 +68,6 @@ module.exports = {
 		// Check if message contains any file and then use different model
 		const file = message.attachments.first()?.url;
 		if (file) {
-			// console.log(message.attachments.first());
 			try {
 				const response = await Gemini.imagePrompt(
 					`${imageSetting}${msg}`,
@@ -127,7 +124,6 @@ module.exports = {
 			}
 		}
 		previousChat.reverse();
-		// console.log(previousChat);
 
 		const chat = model.startChat({
 			history: [
@@ -157,7 +153,7 @@ module.exports = {
 				console.log(error);
 				// Retry request
 				msgRef = await message.channel.send(
-					`\`\`\`${error}\`\`\`\n## Please Wait, retrying request...\n*What an epic QOL update isn't it xD?*`
+					`\`\`\`${error}\`\`\`\n## Please Wait, retrying request...`
 				);
 				isFirstChunk = false;
 				return chat.sendMessageStream(msg);

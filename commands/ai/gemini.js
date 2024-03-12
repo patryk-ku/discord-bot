@@ -17,7 +17,7 @@ module.exports = {
 	async execute(interaction) {
 		if (!process.env.GEMINI_API_KEY) {
 			return interaction.reply(
-				'Gemini AI commands are **disabled** because the bot owner did not provided an Gemini API token.'
+				'Gemini AI commands are **disabled** because the bot owner did not provided an Gemini API key.'
 			);
 		}
 
@@ -33,7 +33,6 @@ module.exports = {
 		if (file) {
 			try {
 				const response = await Gemini.imagePrompt(prompt, file);
-				// return await interaction.editReply(`${file.url}\n${response}`);
 				const embed = new EmbedBuilder()
 					.setColor('#4c86e3')
 					.setAuthor({ name: `${user.username} request:`, iconURL: user.avatarURL() })
@@ -67,7 +66,6 @@ module.exports = {
 
 		try {
 			const response = result.response.text();
-			// return await interaction.editReply(response);
 			const embed = new EmbedBuilder()
 				.setColor('#4c86e3')
 				.setAuthor({ name: `${user.username} request:`, iconURL: user.avatarURL() })
