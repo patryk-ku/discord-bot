@@ -3,3 +3,4 @@ node_modules
 database.sqlite
 tmpfiles
 bot.log
+discord-bot.code-workspace
