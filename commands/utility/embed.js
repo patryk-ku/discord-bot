@@ -51,7 +51,7 @@ module.exports = {
 
 		// Downloading video using yt-dlp
 		try {
-			const { error, stdout, stderr } = await execPromise(`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4)"`);
+			const { error, stdout, stderr } = await execPromise(`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4)" --cookies ./cookies.txt`);
 			if (error) {
 				console.log(error);
 			}
