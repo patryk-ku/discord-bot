@@ -4,14 +4,16 @@ exports.downloadFile = async (url, path, retry = false) => {
 	let response;
 	try {
 		response = await fetch(url)
-			.then(res => {
+			.then((res) => {
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
 				return res;
 			})
 			.then((res) => res.arrayBuffer())
-			.catch(error => { throw new Error(error); });
+			.catch((error) => {
+				throw new Error(error);
+			});
 	} catch (error) {
 		// return { error: `Failed to fetch image from url: \`${url}\` because: \`${error}\`` };
 		console.log(`Failed to download: ${url}`);
@@ -62,4 +64,17 @@ exports.deleteMultipleFiles = (paths) => {
 	for (const path of paths) {
 		this.deleteFile(path);
 	}
+};
+
+exports.msToHoursMinutesSeconds = (ms) => {
+	const hours = Math.floor((ms % 86400000) / 3600000).toString();
+	const minutes = Math.floor((ms % 3600000) / 60000).toString();
+	const seconds = Math.floor((ms % 60000) / 1000).toString();
+	return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
+};
+
+exports.secondsToHoursMinutes = (s) => {
+	const minutes = Math.floor(s / 60).toString();
+	const seconds = (s % 60).toString();
+	return `${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
 };

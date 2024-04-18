@@ -28,6 +28,7 @@ module.exports = {
 			return await interaction.editReply('No one on this server has submitted their last.fm nickname to the bot.');
 		}
 
+		// TODO: check if nickname is provided
 		const request = [];
 		const requestUsersId = [];
 		for (let i = 0; i < guild.length; i++) {

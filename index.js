@@ -38,6 +38,9 @@ client.Users = client.sequelize.define(
 		lastfm: Sequelize.STRING,
 		locked: Sequelize.BOOLEAN,
 		listenbrainz: Sequelize.STRING,
+		riot_name: Sequelize.STRING,
+		riot_region: Sequelize.STRING,
+		riot_puuid: Sequelize.STRING,
 	},
 	{
 		timestamps: false,
