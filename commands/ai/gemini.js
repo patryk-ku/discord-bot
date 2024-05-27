@@ -57,7 +57,7 @@ module.exports = {
 		// Disable all safety settings
 		const safetySettings = Gemini.safetySettings;
 
-		const model = genAI.getGenerativeModel({ model: 'gemini-pro', safetySettings });
+		const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash', safetySettings });
 
 		const result = await model.generateContent(prompt).catch((error) => {
 			console.log(error);

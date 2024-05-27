@@ -9,10 +9,10 @@ exports.imagePrompt = async (prompt, attachment) => {
 		};
 	}
 
-	// Check image size. Max 4 MB for enire request so I let 2,75 for image because of base64 conversion rate
-	const maxImageSize = 1024 * 1024 * 2.75;
+	// Check image size. Max 20 MB for enire request so I let 12MB for image because of base64 conversion rate
+	const maxImageSize = 1024 * 1024 * 12;
 	if (Number(attachment.size) > maxImageSize) {
-		throw { text: 'File too big. (Max file size is **2,75 MB**)' };
+		throw { text: 'File too big. (Max file size is **12 MB**)' };
 	}
 
 	// Donwnload image to buffer
@@ -31,7 +31,7 @@ exports.imagePrompt = async (prompt, attachment) => {
 
 	const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 	const model = genAI.getGenerativeModel({
-		model: 'gemini-pro-vision',
+		model: 'gemini-1.5-flash',
 		generationConfig,
 		safetySettings,
 	});

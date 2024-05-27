@@ -97,7 +97,7 @@ module.exports = {
 			}
 		}
 
-		const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+		const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 		// Get user chat history from bot database
 		const chatHistory = await message.client.geminiChat.findAll({
