@@ -9,10 +9,10 @@ exports.imagePrompt = async (prompt, attachment) => {
 		};
 	}
 
-	// Check image size. Max 20 MB for enire request so I let 12MB for image because of base64 conversion rate
-	const maxImageSize = 1024 * 1024 * 12;
+	// Check image size. Max 4 MB for enire request so I let 2,75 for image because of base64 conversion rate
+	const maxImageSize = 1024 * 1024 * 2.75;
 	if (Number(attachment.size) > maxImageSize) {
-		throw { text: 'File too big. (Max file size is **12 MB**)' };
+		throw { text: 'File too big. (Max file size is **2,75 MB**)' };
 	}
 
 	// Donwnload image to buffer
