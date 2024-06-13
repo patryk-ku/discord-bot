@@ -9,9 +9,19 @@ module.exports = {
 		.addIntegerOption((option) =>
 			option
 				.setName('amount')
-				.setDescription('Number of last messages (default 50).')
-				.setMinValue(10)
-				.setMaxValue(250)
+				.setDescription('Number of last messages (default 200).')
+				.setMinValue(50)
+				.setMaxValue(10000)
+		)
+		.addStringOption((option) =>
+			option
+				.setName('model')
+				.setDescription('Gemini model.')
+				.addChoices(
+					{ name: 'gemini-1.5-pro', value: 'gemini-1.5-pro' },
+					{ name: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
+					{ name: 'gemini-pro', value: 'gemini-pro' }
+				)
 		)
 		.setDMPermission(false),
 	async execute(interaction) {
@@ -25,14 +35,34 @@ module.exports = {
 		console.log(
 			`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`
 		);
-		const amount = interaction.options.getInteger('amount') ?? 50;
+		const amount = interaction.options.getInteger('amount') ?? 200;
+		const model = interaction.options.getString('model') ?? 'gemini-1.5-flash';
+		console.log('model: ', model);
 
-		let messages;
-		try {
-			messages = await interaction.channel.messages.fetch({ limit: amount + 1 });
-		} catch (error) {
-			return await interaction.editReply('**Error**: Failed to load messages.');
+		const messages = [];
+		let lastId;
+		const options = { limit: 100 };
+
+		for (let i = 0; i < amount / 100; i++) {
+			console.log('page:', i);
+			if (lastId) {
+				options.before = lastId;
+			}
+
+			try {
+				const messagesPart = await interaction.channel.messages.fetch(options);
+				messages.push(...messagesPart);
+				if (messagesPart.last()?.id) {
+					lastId = messagesPart.last().id;
+				} else if (messages.length > 0 && !messagesPart.last()?.id) {
+					break;
+				}
+			} catch (error) {
+				console.log(error);
+				return await interaction.editReply('**Error**: Failed to load messages.');
+			}
 		}
+		console.log('msg amount: ', messages.length);
 		messages.reverse();
 
 		// TODO: move to separate file
@@ -71,15 +101,16 @@ module.exports = {
 		let chatHistory = '';
 
 		for (const message of messages.values()) {
-			if (message.content.length > 0) {
+			if (message[1].content?.length > 0) {
 				// console.log(
 				// 	`${message.author.username}: ${await parseMentions(interaction.guild.members, message.content)}`
 				// );
-				chatHistory += `${message.author.username}: ${await parseMentions(message.content)}\n\n`;
+				chatHistory += `${message[1].author.username}: ${await parseMentions(message[1].content)}\n\n`;
 			}
 		}
 
 		if (chatHistory.length === 0) {
+			console.log('len 0 error');
 			return await interaction.editReply('**Error**: Failed to load messages.');
 		}
 
@@ -94,14 +125,28 @@ module.exports = {
 			},
 		];
 
-		const aiSummary = await fetchGemini(prompt, {});
+		let aiSummary = await fetchGemini(prompt, {}, model);
 		if (aiSummary.error) {
 			console.log(aiSummary.error);
 			return await interaction.editReply('**Error**: Failed to fetch Gemini api.');
 		}
 
-		return await interaction.editReply(
-			`## Summary of last ${amount} channel messages:\n${aiSummary}`
-		);
+		aiSummary = `# Summary of last ${amount} channel messages:\n` + aiSummary;
+
+		if (aiSummary.length < 2000) {
+			return await interaction.editReply(aiSummary);
+		} else {
+			// not tested yet
+			for (let i = 0; i < aiSummary.length; i += 2000) {
+				if (i === 0) {
+					await interaction.editReply(aiSummary.substring(0, 2000));
+				} else {
+					await interaction.followUp(aiSummary.substring(0, 2000));
+				}
+				aiSummary = aiSummary.substring(2000);
+			}
+		}
+
+		return;
 	},
 };
