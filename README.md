@@ -15,15 +15,16 @@ The behaviour of the bot can be changed by editing the default prompts in the .e
 > [!TIP]
 > In order for the bot to be able to read users messages on the server, you need to enable **MESSAGE CONTENT INTENT** in the bot settings on the Discord Developer Portal.
 
-At this moment, access to the Gemini API is free up to 60 QPM (queries per minute) but this may change at any time.
+At this moment, access to the Gemini API is free up to 15 queries per minute and 1500 requests per day but this may change at any time.
 
 > [!IMPORTANT]
-> The Google Gemini API is not available in Europe at the moment. But you can bypass this by using a VPN or Proxy.
+> The Google Gemini API is not available for free in Europe at the moment. But you can bypass this by using a VPN or Proxy. You can make the bot use the proxy only for Gemini API commands by setting the `PROXY_URL` variable in the `.env` file.
 
 | command | description |
 | ----------- | ----------- |
 | `/gemini` | A simple query to the AI assistant (without chat history and any aditional prompt settings). It also supports image input. |
-| `/chatbot reset ` | Reset chatbot history to start new clean chat. |
+| `/chatbot reset` | Reset chatbot history to start new clean chat. |
+| `/tldr` | Summarizes recent messages on this channel using AI. |
 
 ### Last.fm
 
@@ -51,6 +52,19 @@ At this moment, access to the Gemini API is free up to 60 QPM (queries per minut
 | `/listenbrainz nickname remove` | Delete your listenbrainz nickname from bot database. |
 | `/listenbrainz np` | Replies with your now playing song. |
 | `/listenbrainz cover` | Replies with high-res cover art of user now playing song (from listenbrainz). |
+
+### League of Legends
+
+> [!WARNING]
+> These commands are experimental and may not work properly.
+
+| command | description |
+| ----------- | ----------- |
+| `/lol nickname set` | Set or update your League of Legends nickname. |
+| `/lol nickname remove` | Delete your League of Legends nickname from bot database. |
+| `/lol np` | Replies with user current game info (if playing). |
+| `/lol playing` | Replies with entire server current game info. |
+| `/lol recent` | Replies with user last games info. |
 
 ### Utility
 
@@ -96,6 +110,7 @@ These commands can only be used by the owner of an instance of this bot
 | ----------- | ----------- |
 | `/debug termux` | Debug info about the Termux instance (if in use). |
 | `/debug voice` | Debug info about the voice internals. |
+| `/debug settings` | Debug info about bot enabled APIs and settings. |
 
 ## Requirements
 
