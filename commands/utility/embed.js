@@ -51,7 +51,7 @@ module.exports = {
 
 		// Downloading video using yt-dlp
 		try {
-			const { error, stdout, stderr } = await execPromise(`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4)" --cookies ./cookies.txt`);
+			const { error, stdout, stderr } = await execPromise(`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4)"`);
 			if (error) {
 				console.log(error);
 			}
@@ -128,7 +128,6 @@ module.exports = {
 				}
 			}
 
-			// await interaction.followUp('Entire video sent succesfully.');
 			console.log('Entire video sent succesfully.');
 			helperFunctions.deleteFile(filePath);
 			helperFunctions.deleteMultipleFiles(fragmentsList);
