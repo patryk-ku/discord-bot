@@ -110,7 +110,10 @@ const { HttpsProxyAgent } = require('https-proxy-agent');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 // const proxyAgent = new HttpsProxyAgent(process.env.PROXY_URL);
 
-exports.fetchGemini = async (chatHistory, config = {}, model = 'gemini-1.5-flash') => {
+exports.fetchGemini = async (chatHistory, settings = {}) => {
+	let model = 'gemini-1.5-flash';
+	if (settings?.model) model = settings.model;
+
 	// models: gemini-pro gemini-1.5-pro gemini-1.5-flash
 	const API_URL = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
 
@@ -134,12 +137,12 @@ exports.fetchGemini = async (chatHistory, config = {}, model = 'gemini-1.5-flash
 				threshold: 'BLOCK_NONE',
 			},
 		],
-		// generationConfig: {
-		// 	temperature: 1,
-		// },
+		generationConfig: {
+			// 	temperature: 1,
+		},
 	};
 
-	// if (config?.temperature) data.generationConfig.temperature = config.temperature;
+	if (settings?.config?.temperature) data.generationConfig.temperature = settings.config.temperature;
 
 	const requestOptions = {
 		method: 'post',
