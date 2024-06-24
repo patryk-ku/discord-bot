@@ -125,7 +125,7 @@ module.exports = {
 			console.log(aiSummary.error);
 
 			// TODO: this prevents leaking API key in case of fetch error. Fix it in fetch function later.
-			if (aiSummary.error.contains('key=')) {
+			if (aiSummary.error.includes('key=')) {
 				return await interaction.editReply('**Error**: Failed to fetch Gemini api.');
 			} else {
 				return await interaction.editReply(aiSummary.error);
