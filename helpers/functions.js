@@ -78,3 +78,47 @@ exports.secondsToHoursMinutes = (s) => {
 	const seconds = (s % 60).toString();
 	return `${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
 };
+
+/**
+ * Splits a string into an array of substrings with a maximum length,
+ * ensuring that words are not broken across substrings and handling
+ * markdown bullet points correctly.
+
+ *
+ * @param {string} text - The string to split.
+ * @param {number} maxLength - The maximum length of each substring.
+ * @returns {string[]} An array of substrings.
+ */
+exports.splitTextWithWordWrap = (text, maxLength) => {
+	if (text.length <= maxLength) {
+		return [text];
+	}
+
+	const splitText = [];
+	let currentIndex = 0;
+
+	while (currentIndex < text.length) {
+		let cutPoint = currentIndex + maxLength;
+
+		// If the cut point is within a word, move it back to the last space
+		if (cutPoint < text.length && text[cutPoint] !== ' ') {
+			cutPoint = text.lastIndexOf(' ', cutPoint);
+		}
+
+		// Handle cut points at spaces after markdown bullet points
+		if (cutPoint > 1 && text[cutPoint] === ' ' && text[cutPoint - 1] === '*') {
+			// Move cutPoint before the space
+			cutPoint--;
+		}
+
+		// If no space was found before the maxLength, cut the word
+		if (cutPoint === -1) {
+			cutPoint = currentIndex + maxLength;
+		}
+
+		splitText.push(text.substring(currentIndex, cutPoint).trim());
+		currentIndex = cutPoint;
+	}
+
+	return splitText;
+};
