@@ -108,7 +108,6 @@ const fetch = require('node-fetch');
 const { HttpsProxyAgent } = require('https-proxy-agent');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// const proxyAgent = new HttpsProxyAgent(process.env.PROXY_URL);
 
 exports.fetchGemini = async (chatHistory, settings = {}) => {
 	let model = 'gemini-1.5-flash';
@@ -142,7 +141,9 @@ exports.fetchGemini = async (chatHistory, settings = {}) => {
 		},
 	};
 
-	if (settings?.config?.temperature) data.generationConfig.temperature = settings.config.temperature;
+	if (settings?.config?.temperature) {
+		data.generationConfig.temperature = settings.config.temperature;
+	}
 
 	const requestOptions = {
 		method: 'post',
@@ -156,10 +157,17 @@ exports.fetchGemini = async (chatHistory, settings = {}) => {
 		requestOptions.agent = proxyAgent;
 	}
 
-	try {
-		const response = await fetch(API_URL, requestOptions);
-		const json = await response.json();
+	let response, json;
 
+	try {
+		response = await fetch(API_URL, requestOptions);
+		json = await response.json();
+	} catch (error) {
+		console.error(error.message);
+		return { error: 'Request to Gemini API failed.' };
+	}
+
+	try {
 		// When API returned error code
 		if (json.error) {
 			throw new Error(json.error.message);
