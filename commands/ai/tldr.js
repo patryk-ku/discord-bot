@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const { fetchGemini } = require('../../helpers/gemini.js');
+const { splitTextWithWordWrap } = require('../../helpers/functions.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -9,14 +10,14 @@ module.exports = {
 		.addIntegerOption((option) =>
 			option
 				.setName('amount')
-				.setDescription('Number of last messages (default 200).')
+				.setDescription('Number of last messages (default 200 max 2000).')
 				.setMinValue(50)
-				.setMaxValue(10000)
+				.setMaxValue(2000)
 		)
 		.addStringOption((option) =>
 			option
 				.setName('model')
-				.setDescription('Gemini model.')
+				.setDescription('Gemini model (default: gemini-1.5-pro)')
 				.addChoices(
 					{ name: 'gemini-1.5-pro', value: 'gemini-1.5-pro' },
 					{ name: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
@@ -35,16 +36,16 @@ module.exports = {
 		console.log(
 			`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`
 		);
-		const amount = interaction.options.getInteger('amount') ?? 200;
-		const model = interaction.options.getString('model') ?? 'gemini-1.5-flash';
-		console.log('model: ', model);
 
+		const amount = interaction.options.getInteger('amount') ?? 200;
+		const model = interaction.options.getString('model') ?? 'gemini-1.5-pro';
+
+		// Fetching messages from Discord channel
 		const messages = [];
 		let lastId;
 		const options = { limit: 100 };
 
 		for (let i = 0; i < amount / 100; i++) {
-			console.log('page:', i);
 			if (lastId) {
 				options.before = lastId;
 			}
@@ -62,21 +63,16 @@ module.exports = {
 				return await interaction.editReply('**Error**: Failed to load messages.');
 			}
 		}
-		console.log('msg amount: ', messages.length);
 		messages.reverse();
 
-		// TODO: move to separate file
+		// TODO: condsider moving to separate file
 		async function getUserName(id) {
 			let username;
-			// let username = await guildMembers.cache.get(id)?.user?.username;
-
-			// if (!username) {
-			// 	username = await guildMembers.fetch(id)?.user?.username;
-			// }
 
 			if (!username) {
-				username = await interaction.client.users.cache.get(id)?.username;
+				username = await interaction.client.users?.cache.get(id)?.username;
 			}
+
 			return username ? username : 'UnknownUsername';
 		}
 		async function parseMentions(text) {
@@ -98,19 +94,17 @@ module.exports = {
 			return text.replace(/<@(\d+)>/g, (match) => userNames[match]);
 		}
 
+		// Creating prompt with chat history.
 		let chatHistory = '';
 
 		for (const message of messages.values()) {
 			if (message[1].content?.length > 0) {
-				// console.log(
-				// 	`${message.author.username}: ${await parseMentions(interaction.guild.members, message.content)}`
-				// );
 				chatHistory += `${message[1].author.username}: ${await parseMentions(message[1].content)}\n\n`;
 			}
 		}
 
 		if (chatHistory.length === 0) {
-			console.log('len 0 error');
+			console.log('Error: Chat history is empty.');
 			return await interaction.editReply('**Error**: Failed to load messages.');
 		}
 
@@ -119,34 +113,37 @@ module.exports = {
 				role: 'user',
 				parts: [
 					{
-						text: `Briefly summarise the conversations of chat users. Each message is separated by one blank line and preceded by the username and a colon. Reply in the language in which the conversation mainly took place. Here is the conversation:\n${chatHistory}`,
+						text: `Summarise briefly but retaining all the key details of web chat user conversations. Use the ironic funny way people express themselves on the internet. At the end, write out the most important information in bullet points. Each message is separated by one blank line and preceded by the username and a colon. Reply in the language in which the conversation mainly took place. Here is the conversation:\n${chatHistory}`,
 					},
 				],
 			},
 		];
 
-		let aiSummary = await fetchGemini(prompt, {}, model);
+		// Fetching Gemini API
+		let aiSummary = await fetchGemini(prompt, { model: model });
 		if (aiSummary.error) {
 			console.log(aiSummary.error);
-			return await interaction.editReply('**Error**: Failed to fetch Gemini api.');
+
+			// TODO: this prevents leaking API key in case of fetch error. Fix it in fetch function later.
+			if (aiSummary.error.contains('key=')) {
+				return await interaction.editReply('**Error**: Failed to fetch Gemini api.');
+			} else {
+				return await interaction.editReply(aiSummary.error);
+			}
 		}
 
+		// Sending response to channel
 		aiSummary = `# Summary of last ${amount} channel messages:\n` + aiSummary;
 
 		if (aiSummary.length < 2000) {
 			return await interaction.editReply(aiSummary);
 		} else {
-			// not tested yet
-			for (let i = 0; i < aiSummary.length; i += 2000) {
-				if (i === 0) {
-					await interaction.editReply(aiSummary.substring(0, 2000));
-				} else {
-					await interaction.followUp(aiSummary.substring(0, 2000));
-				}
-				aiSummary = aiSummary.substring(2000);
+			await interaction.editReply('✅ Summary ready, sending...');
+			const textArray = splitTextWithWordWrap(aiSummary, 2000);
+			for (const text of textArray) {
+				await interaction.channel.send(text);
 			}
 		}
-
 		return;
 	},
 };
