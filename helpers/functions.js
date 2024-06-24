@@ -1,4 +1,5 @@
 const fs = require('fs').promises;
+const { EmbedBuilder } = require('discord.js');
 
 exports.downloadFile = async (url, path, retry = false) => {
 	let response;
@@ -121,4 +122,18 @@ exports.splitTextWithWordWrap = (text, maxLength) => {
 	}
 
 	return splitText;
+};
+
+/**
+ * Creates a Discord embed for command errors.
+ *
+ * @param {string} message - The error message to display in the embed.
+ * @param {string} [title="Error"] - The title of the embed. Defaults to "Error".
+ * @returns {object} A Discord message object with embed representing the error message.
+ */
+exports.createErrorEmbed = (message, title = 'Error') => {
+	const embed = new EmbedBuilder()
+		.setColor('#cc0000')
+		.setDescription(`## ❌ ${title}:\n\`\`\`${message}\`\`\``);
+	return { content: '', embeds: [embed] };
 };
