@@ -158,6 +158,7 @@ module.exports = {
 				add('Last.fm', process.env.LASTFM_API_KEY ? ':white_check_mark:' : ':x:');
 				add('Listenbrainz', process.env.LISTENBRAINZ_TOKEN ? ':white_check_mark:' : ':x:');
 				add('Gemini', process.env.GEMINI_API_KEY ? ':white_check_mark:' : ':x:');
+				add('League of Legends', process.env.RIOTGAMES_TOKEN ? ':white_check_mark:' : ':x:');
 
 				// Other settings
 				separator('Other settings');
@@ -175,9 +176,7 @@ module.exports = {
 					'Termux low battery notification',
 					process.env.TERMUX_LOW_BATTERY_NOTIF ? ':white_check_mark:' : ':x:'
 				);
-
-				// Bot owner
-				add('Bot instance owner', `<@${process.env.OWNER_ID}>`);
+				add('Proxy for Gemini API', process.env.PROXY_URL ? ':white_check_mark:' : ':x:');
 
 				// Parse into markdown string
 				let embedString = '';
@@ -185,12 +184,14 @@ module.exports = {
 					if (option.separator) {
 						embedString += `\n### ${option.header}`;
 					} else {
-						embedString += `\n- **${option.name}**:  ${option.value}`;
+						embedString += `\n- ${option.value}  **${option.name}**`;
 					}
 				}
 
-				const embed = new EmbedBuilder()
-					.setDescription(embedString);
+				// Bot owner
+				embedString += `\n\nBot instance owner: <@${process.env.OWNER_ID}>`;
+
+				const embed = new EmbedBuilder().setDescription(embedString);
 
 				return await interaction.editReply({ content: '', embeds: [embed] });
 			}
