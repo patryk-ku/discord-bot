@@ -1,7 +1,11 @@
 const { SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const { fetchGemini } = require('../../helpers/gemini.js');
-const { splitTextWithWordWrap } = require('../../helpers/functions.js');
+const {
+	splitTextWithWordWrap,
+	createWarningEmbed,
+	createErrorEmbed,
+} = require('../../helpers/functions.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -28,7 +32,9 @@ module.exports = {
 	async execute(interaction) {
 		if (!process.env.GEMINI_API_KEY) {
 			return interaction.reply(
-				'Gemini AI commands are **disabled** because the bot owner did not provided an Gemini API key.'
+				createWarningEmbed(
+					'Gemini AI commands are **disabled** because the bot owner did not provided an Gemini API key.'
+				)
 			);
 		}
 
@@ -60,7 +66,7 @@ module.exports = {
 				}
 			} catch (error) {
 				console.log(error);
-				return await interaction.editReply('**Error**: Failed to load messages.');
+				return await interaction.editReply(createErrorEmbed('Failed to load messages.'));
 			}
 		}
 		messages.reverse();
@@ -105,7 +111,7 @@ module.exports = {
 
 		if (chatHistory.length === 0) {
 			console.log('Error: Chat history is empty.');
-			return await interaction.editReply('**Error**: Failed to load messages.');
+			return await interaction.editReply(createErrorEmbed('Failed to load messages.'));
 		}
 
 		const prompt = [
@@ -124,12 +130,7 @@ module.exports = {
 		if (aiSummary.error) {
 			console.log(aiSummary.error);
 
-			// TODO: this prevents leaking API key in case of fetch error. Fix it in fetch function later.
-			if (aiSummary.error.includes('key=')) {
-				return await interaction.editReply('**Error**: Failed to fetch Gemini api.');
-			} else {
-				return await interaction.editReply(aiSummary.error);
-			}
+			return await interaction.editReply(createErrorEmbed(aiSummary.error));
 		}
 
 		// Sending response to channel
