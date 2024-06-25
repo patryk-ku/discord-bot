@@ -134,6 +134,19 @@ exports.splitTextWithWordWrap = (text, maxLength) => {
 exports.createErrorEmbed = (message, title = 'Error') => {
 	const embed = new EmbedBuilder()
 		.setColor('#cc0000')
-		.setDescription(`## ❌ ${title}:\n\`\`\`${message}\`\`\``);
+		.setDescription(`## :x: ${title}:\n\`\`\`${message}\`\`\``);
+	return { content: '', embeds: [embed] };
+};
+
+/**
+ * Creates a Discord embed for warnings/notices.
+ *
+ * @param {string} message - Message to display in the embed.
+ * @returns {object} A Discord message object with embed representing the warning/notice message.
+ */
+exports.createWarningEmbed = (message) => {
+	const embed = new EmbedBuilder()
+		.setColor('#FFCB4D')
+		.setDescription(`## :warning:\n### ${message}`);
 	return { content: '', embeds: [embed] };
 };
