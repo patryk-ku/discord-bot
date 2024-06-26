@@ -1,17 +1,20 @@
 const fs = require('fs').promises;
+const { EmbedBuilder } = require('discord.js');
 
 exports.downloadFile = async (url, path, retry = false) => {
 	let response;
 	try {
 		response = await fetch(url)
-			.then(res => {
+			.then((res) => {
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
 				return res;
 			})
 			.then((res) => res.arrayBuffer())
-			.catch(error => { throw new Error(error); });
+			.catch((error) => {
+				throw new Error(error);
+			});
 	} catch (error) {
 		// return { error: `Failed to fetch image from url: \`${url}\` because: \`${error}\`` };
 		console.log(`Failed to download: ${url}`);
@@ -62,4 +65,88 @@ exports.deleteMultipleFiles = (paths) => {
 	for (const path of paths) {
 		this.deleteFile(path);
 	}
+};
+
+exports.msToHoursMinutesSeconds = (ms) => {
+	const hours = Math.floor((ms % 86400000) / 3600000).toString();
+	const minutes = Math.floor((ms % 3600000) / 60000).toString();
+	const seconds = Math.floor((ms % 60000) / 1000).toString();
+	return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
+};
+
+exports.secondsToHoursMinutes = (s) => {
+	const minutes = Math.floor(s / 60).toString();
+	const seconds = (s % 60).toString();
+	return `${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
+};
+
+/**
+ * Splits a string into an array of substrings with a maximum length,
+ * ensuring that words are not broken across substrings and handling
+ * markdown bullet points correctly.
+
+ *
+ * @param {string} text - The string to split.
+ * @param {number} maxLength - The maximum length of each substring.
+ * @returns {string[]} An array of substrings.
+ */
+exports.splitTextWithWordWrap = (text, maxLength) => {
+	if (text.length <= maxLength) {
+		return [text];
+	}
+
+	const splitText = [];
+	let currentIndex = 0;
+
+	while (currentIndex < text.length) {
+		let cutPoint = currentIndex + maxLength;
+
+		// If the cut point is within a word, move it back to the last space
+		if (cutPoint < text.length && text[cutPoint] !== ' ') {
+			cutPoint = text.lastIndexOf(' ', cutPoint);
+		}
+
+		// Handle cut points at spaces after markdown bullet points
+		if (cutPoint > 1 && text[cutPoint] === ' ' && text[cutPoint - 1] === '*') {
+			// Move cutPoint before the space
+			cutPoint--;
+		}
+
+		// If no space was found before the maxLength, cut the word
+		if (cutPoint === -1) {
+			cutPoint = currentIndex + maxLength;
+		}
+
+		splitText.push(text.substring(currentIndex, cutPoint).trim());
+		currentIndex = cutPoint;
+	}
+
+	return splitText;
+};
+
+/**
+ * Creates a Discord embed for command errors.
+ *
+ * @param {string} message - The error message to display in the embed.
+ * @param {string} [title="Bot Error"] - The title of the embed. Defaults to "Bot Error".
+ * @returns {object} A Discord message object with embed representing the error message.
+ */
+exports.createErrorEmbed = (message, title = 'Bot Error') => {
+	const embed = new EmbedBuilder()
+		.setColor('#cc0000')
+		.setDescription(`### :x: ${title}:\n${message}`);
+	return { content: '', embeds: [embed] };
+};
+
+/**
+ * Creates a Discord embed for warnings/notices.
+ *
+ * @param {string} message - Message to display in the embed.
+ * @returns {object} A Discord message object with embed representing the warning/notice message.
+ */
+exports.createWarningEmbed = (message) => {
+	const embed = new EmbedBuilder()
+		.setColor('#FFCB4D')
+		.setDescription(`### :warning:\n${message}`);
+	return { content: '', embeds: [embed] };
 };

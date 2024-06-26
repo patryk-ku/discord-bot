@@ -21,10 +21,13 @@
   "license": "MIT",
   "dependencies": {
     "@discordjs/voice": "^0.16.1",
+    "@google/generative-ai": "^0.2.1",
     "@napi-rs/canvas": "^0.1.44",
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1",
+    "https-proxy-agent": "^7.0.4",
     "libsodium-wrappers": "^0.7.13",
+    "node-fetch": "^2.7.0",
     "opusscript": "^0.0.8",
     "pm2": "^5.3.0",
     "sequelize": "^6.35.0",
@@ -34,6 +37,7 @@
   },
   "devDependencies": {
     "eslint": "^8.53.0",
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.1",
+    "prettier": "^3.2.5"
   }
 }

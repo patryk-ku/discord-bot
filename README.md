@@ -4,6 +4,28 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 
 ## Commands
 
+### Google Gemini AI
+
+This bot has optional AI chat functionality using Google Gemini. To chat with the bot, simply @mention it in a text channel that the bot has access to. If you have configured everything correctly the bot should reply to the message after a short while. Chat history is saved up to 40 (one user question + bot reply, so a total of 80 messages). Chat history is shared between the whole server and all users. The bot is configured by default to recognise users by their nickname (Discord Display Name).
+
+You can also attach images to messages (up to 2.75 MB in .png, .jpg, .webp, .heic, .heif formats). Messages with images are saved in the chat history, but the request itself cannot access it because it uses a different model which is not suitable for chatting. The picture itself is not saved either, the bot only has access to the user's question and its own answer to the question with the picture.
+
+The behaviour of the bot can be changed by editing the default prompts in the .env file. See the comments in this file for more information.
+
+> [!TIP]
+> In order for the bot to be able to read users messages on the server, you need to enable **MESSAGE CONTENT INTENT** in the bot settings on the Discord Developer Portal.
+
+At this moment, access to the Gemini API is free up to 15 queries per minute and 1500 requests per day but this may change at any time.
+
+> [!IMPORTANT]
+> The Google Gemini API is not available for free in Europe at the moment. But you can bypass this by using a VPN or Proxy. You can make the bot use the proxy only for Gemini API commands by setting the `PROXY_URL` variable in the `.env` file.
+
+| command | description |
+| ----------- | ----------- |
+| `/gemini` | A simple query to the AI assistant (without chat history and any aditional prompt settings). It also supports image input. |
+| `/chatbot reset` | Reset chatbot history to start new clean chat. |
+| `/tldr` | Summarizes recent messages on this channel using AI. |
+
 ### Last.fm
 
 | command | description |
@@ -31,6 +53,19 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 | `/listenbrainz np` | Replies with your now playing song. |
 | `/listenbrainz cover` | Replies with high-res cover art of user now playing song (from listenbrainz). |
 
+### League of Legends
+
+> [!WARNING]
+> These commands are experimental and may not work properly.
+
+| command | description |
+| ----------- | ----------- |
+| `/lol nickname set` | Set or update your League of Legends nickname. |
+| `/lol nickname remove` | Delete your League of Legends nickname from bot database. |
+| `/lol np` | Replies with user current game info (if playing). |
+| `/lol playing` | Replies with entire server current game info. |
+| `/lol recent` | Replies with user last games info. |
+
 ### Utility
 
 | command | description |
@@ -40,7 +75,8 @@ Simple self-hosted multipurpose Discord bot designed for use in small/private di
 
 ### Voice
 
-> Warning: These commands are experimental and may not work properly.
+> [!WARNING]
+> These commands are experimental and may not work properly.
 
 | command | description |
 | ----------- | ----------- |
@@ -74,6 +110,7 @@ These commands can only be used by the owner of an instance of this bot
 | ----------- | ----------- |
 | `/debug termux` | Debug info about the Termux instance (if in use). |
 | `/debug voice` | Debug info about the voice internals. |
+| `/debug settings` | Debug info about bot enabled APIs and settings. |
 
 ## Requirements
 
@@ -90,6 +127,7 @@ These commands can only be used by the owner of an instance of this bot
 	Privileged Gateway Intents:
 
 	- SERVER MEMBERS INTENT
+	- MESSAGE CONTENT INTENT (needed only for AI chatbot)
 
 	OAuth2 invite URL permissions:
 
@@ -169,10 +207,10 @@ These commands can only be used by the owner of an instance of this bot
 
 	Other useful commands:
 
-	- npm run reload
-	- npm run monit
-	- npm run logs
-	- npo run dev
+	- `npm run reload`
+	- `npm run monit`
+	- `npm run logs`
+	- `npm run dev`
 
 ## Made with
 
