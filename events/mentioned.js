@@ -98,33 +98,19 @@ module.exports = {
 				return await message.channel.send(createErrorEmbed(chat.error));
 			}
 		} else {
-			// Start new chat if history is empty.
-			if (previousChat.length === 0) {
-				msg = `${chatSetting} ${msg}`;
+			chat = [
+				...previousChat,
+				{
+					role: 'user',
+					parts: [
+						{
+							text: msg,
+						},
+					],
+				},
+			];
 
-				chat = [
-					{
-						role: 'user',
-						parts: [
-							{
-								text: msg,
-							},
-						],
-					},
-				];
-			} else {
-				chat = [
-					...previousChat,
-					{
-						role: 'user',
-						parts: [
-							{
-								text: msg,
-							},
-						],
-					},
-				];
-			}
+			chat[0].parts[0].text = `${chatSetting} ${chat[0].parts[0].text}`;
 		}
 
 		// Fetching Gemini API
