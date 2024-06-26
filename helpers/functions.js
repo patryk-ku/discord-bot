@@ -128,13 +128,13 @@ exports.splitTextWithWordWrap = (text, maxLength) => {
  * Creates a Discord embed for command errors.
  *
  * @param {string} message - The error message to display in the embed.
- * @param {string} [title="Error"] - The title of the embed. Defaults to "Error".
+ * @param {string} [title="Bot Error"] - The title of the embed. Defaults to "Bot Error".
  * @returns {object} A Discord message object with embed representing the error message.
  */
-exports.createErrorEmbed = (message, title = 'Error') => {
+exports.createErrorEmbed = (message, title = 'Bot Error') => {
 	const embed = new EmbedBuilder()
 		.setColor('#cc0000')
-		.setDescription(`## :x: ${title}:\n\`\`\`${message}\`\`\``);
+		.setDescription(`### :x: ${title}:\n${message}`);
 	return { content: '', embeds: [embed] };
 };
 
@@ -147,6 +147,6 @@ exports.createErrorEmbed = (message, title = 'Error') => {
 exports.createWarningEmbed = (message) => {
 	const embed = new EmbedBuilder()
 		.setColor('#FFCB4D')
-		.setDescription(`## :warning:\n### ${message}`);
+		.setDescription(`### :warning:\n${message}`);
 	return { content: '', embeds: [embed] };
 };
