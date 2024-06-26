@@ -1,7 +1,7 @@
 const { Events } = require('discord.js');
 require('dotenv').config();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const Gemini = require('../helpers/gemini');
+const { fetchGemini, prepareImagePrompt } = require('../helpers/gemini.js');
+const { splitTextWithWordWrap, createErrorEmbed } = require('../helpers/functions.js');
 
 module.exports = {
 	name: Events.MessageCreate,
@@ -25,12 +25,7 @@ module.exports = {
 		);
 
 		// Author name
-		let userName = message.author.username;
-		if (message.author.globalName) {
-			if (message.author.globalName.length > 0) {
-				userName = message.author.globalName;
-			}
-		}
+		const userName = message.author.globalName || message.author.username;
 
 		// Remove bot mention from message and reject if empty msg
 		let msg = `${message.content}`
@@ -42,17 +37,11 @@ module.exports = {
 		}
 		message.channel.sendTyping();
 
-		const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-		// Disable all safety settings
-		const safetySettings = Gemini.safetySettings;
-		// const generationConfig = Gemini.generationConfig;
-
 		// Set AI personality according to .env settings
 		let chatSetting = '';
 		if (!process.env.GEMINI_CHAT_SETTING) {
 			chatSetting =
-				'You have just logged into a web chat and are answering questions from other users. Questions to you will be in the form user_name: content_message. Try to distinguish individual users by their names. Reply to them with the content of the message itself without mentioning your nickname.';
+				'You have just logged into a web chat and are answering questions from other users. Questions to you will be in the form user_name: content_message. Try to distinguish individual users by their names. Reply to them with the content of the message itself without mentioning your nickname. Here is the first question.';
 		} else {
 			chatSetting = process.env.GEMINI_CHAT_SETTING;
 		}
@@ -60,46 +49,12 @@ module.exports = {
 		let imageSetting = '';
 		if (!process.env.GEMINI_IMAGE_SETTING) {
 			imageSetting =
-				'You have just logged into a web chat and are answering questions from other users.';
+				'You have just logged into a web chat and are answering questions from other users. Questions to you will be in the form user_name: content_message. Reply to them with the content of the message itself without mentioning your nickname. Here is the first question.';
 		} else {
 			imageSetting = process.env.GEMINI_IMAGE_SETTING;
 		}
 
-		// Check if message contains any file and then use different model
-		const file = message.attachments.first()?.url;
-		if (file) {
-			try {
-				const response = await Gemini.imagePrompt(
-					`${imageSetting}${msg}`,
-					message.attachments.first()
-				);
-				await message.channel.send(response);
-
-				// Save message to chat history
-				try {
-					await message.client.geminiChat.create({
-						guild: message.guild.id,
-						user: `${userName}: ${msg}`,
-						model: response,
-					});
-				} catch (error) {
-					console.log(error);
-				}
-
-				return;
-			} catch (error) {
-				console.log(error);
-				if (error.text) {
-					return await message.channel.send(error.text);
-				} else {
-					return await message.channel.send('```' + error.message + '```');
-				}
-			}
-		}
-
-		const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-		// Get user chat history from bot database
+		// Get server chat history from bot database
 		const chatHistory = await message.client.geminiChat.findAll({
 			where: { guild: message.guild.id },
 			limit: 40,
@@ -113,11 +68,19 @@ module.exports = {
 					previousChat.push(
 						{
 							role: 'model',
-							parts: chat.model,
+							parts: [
+								{
+									text: chat.model,
+								},
+							],
 						},
 						{
 							role: 'user',
-							parts: chat.user,
+							parts: [
+								{
+									text: chat.user,
+								},
+							],
 						}
 					);
 				}
@@ -125,115 +88,75 @@ module.exports = {
 		}
 		previousChat.reverse();
 
-		const chat = model.startChat({
-			history: [
-				{
-					role: 'user',
-					parts: chatSetting,
-				},
-				{
-					role: 'model',
-					parts: 'Ok.',
-				},
-				...previousChat,
-			],
-			generationConfig: {
-				maxOutputTokens: 400,
-			},
-			safetySettings,
-		});
-
-		// Finally send request to gemini api
-		let entireResponse = '';
-		let isFirstChunk = true;
-		let msgRef;
 		msg = `${userName}: ${msg}`;
+
+		let chat;
+		const file = message.attachments.first();
+		if (file) {
+			chat = await prepareImagePrompt(`${imageSetting} ${msg}`, file);
+			if (chat.error) {
+				return await message.channel.send(createErrorEmbed(chat.error));
+			}
+		} else {
+			// Start new chat if history is empty.
+			if (previousChat.length === 0) {
+				msg = `${chatSetting} ${msg}`;
+
+				chat = [
+					{
+						role: 'user',
+						parts: [
+							{
+								text: msg,
+							},
+						],
+					},
+				];
+			} else {
+				chat = [
+					...previousChat,
+					{
+						role: 'user',
+						parts: [
+							{
+								text: msg,
+							},
+						],
+					},
+				];
+			}
+		}
+
+		// Fetching Gemini API
+		const response = await fetchGemini(chat, { maxOutputTokens: 600 });
+		if (response.error) {
+			console.log(response.error);
+			return await message.channel.send(createErrorEmbed(response.error));
+		}
+
+		// Split message into parts if 2000 chars limit exceeded
+		const messagesToSend = [];
+
+		if (response.length <= 2000) {
+			messagesToSend.push(response);
+		} else {
+			messagesToSend.push(...splitTextWithWordWrap(response, 2000));
+		}
+
+		// Send messages
+		for (const singleMessage of messagesToSend) {
+			await message.channel.send(singleMessage);
+		}
+
+		// Save message to chat history
 		try {
-			const result = await chat.sendMessageStream(msg).catch(async (error) => {
-				console.log(error);
-				// Retry request
-				msgRef = await message.channel.send(
-					`\`\`\`${error}\`\`\`\n## Please Wait, retrying request...`
-				);
-				isFirstChunk = false;
-				return chat.sendMessageStream(msg);
+			await message.client.geminiChat.create({
+				guild: message.guild.id,
+				user: msg,
+				model: response,
 			});
-
-			// Update response on new data
-			for await (const chunk of result.stream) {
-				if (chunk.promptFeedback?.blockReason == 'SAFETY') {
-					let reply = '### Response was blocked because of safety reasons:\n```';
-					for (const rating of chunk.promptFeedback.safetyRatings) {
-						reply += `\n- ${rating.category}: ${rating.probability}`;
-					}
-					reply += '```';
-					throw { text: reply };
-				} else if (chunk.promptFeedback?.blockReason == 'OTHER') {
-					const reply =
-						'### Response was blocked due to OTHER reason. Please wait, the police are coming.';
-					throw { text: reply };
-				}
-
-				entireResponse += chunk.text();
-				if (entireResponse.length == 0) {
-					console.log(chunk);
-					continue;
-				}
-
-				if (isFirstChunk) {
-					msgRef = await message.channel.send(entireResponse);
-					isFirstChunk = false;
-				} else {
-					msgRef.edit(entireResponse);
-				}
-			}
-
-			// Save message to chat history
-			if (entireResponse.length > 0) {
-				try {
-					await message.client.geminiChat.create({
-						guild: message.guild.id,
-						user: msg,
-						model: entireResponse,
-					});
-				} catch (error) {
-					console.log(error);
-				}
-			}
-			return;
 		} catch (error) {
 			console.log(error);
-
-			if (error.text) {
-				return await message.channel.send(error.text);
-			}
-
-			if (error.response?.promptFeedback?.blockReason == 'SAFETY') {
-				let reply = 'Response was blocked because of safety reasons:\n```';
-				for (const rating of error.response.promptFeedback.safetyRatings) {
-					reply += `\n- ${rating.category}: ${rating.probability}`;
-				}
-				reply += '```';
-				return await message.channel.send(reply);
-			} else if (error.response?.candidates[0]?.finishReason == 'SAFETY') {
-				return await message.channel.send(
-					'### Response was blocked due to safety reasons.'
-				);
-			} else if (error.response?.promptFeedback?.blockReason == 'OTHER') {
-				return await message.channel.send(
-					'### Response was blocked due to OTHER reason. Please wait, the police are coming.'
-				);
-			} else if (error.response?.candidates[0]?.finishReason == 'OTHER') {
-				return await message.channel.send(
-					'### Response was blocked due to OTHER reason. Please wait, the police are coming.'
-				);
-			}
-
-			if (isFirstChunk) {
-				return await message.channel.send('```' + error + '```');
-			} else {
-				msgRef.edit('```' + error + '```');
-			}
 		}
 	},
 };

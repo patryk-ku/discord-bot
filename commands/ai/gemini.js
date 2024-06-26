@@ -1,7 +1,11 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
-const Gemini = require('../../helpers/gemini');
+const { fetchGemini, prepareImagePrompt } = require('../../helpers/gemini.js');
+const {
+	splitTextWithWordWrap,
+	createWarningEmbed,
+	createErrorEmbed,
+} = require('../../helpers/functions.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -11,13 +15,25 @@ module.exports = {
 			option.setName('prompt').setDescription('Your question to the bot.').setRequired(true)
 		)
 		.addAttachmentOption((option) =>
-			option.setRequired(false).setName('image').setDescription('Image (max 2,75 MB).')
+			option.setRequired(false).setName('image').setDescription('Image (max 12 MB).')
+		)
+		.addStringOption((option) =>
+			option
+				.setName('model')
+				.setDescription('Gemini model (default: gemini-1.5-pro)')
+				.addChoices(
+					{ name: 'gemini-1.5-pro', value: 'gemini-1.5-pro' },
+					{ name: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
+					{ name: 'gemini-pro', value: 'gemini-pro' }
+				)
 		)
 		.setDMPermission(false),
 	async execute(interaction) {
 		if (!process.env.GEMINI_API_KEY) {
 			return interaction.reply(
-				'Gemini AI commands are **disabled** because the bot owner did not provided an Gemini API key.'
+				createWarningEmbed(
+					'Gemini AI commands are **disabled** because the bot owner did not provided an Gemini API key.'
+				)
 			);
 		}
 
@@ -27,66 +43,86 @@ module.exports = {
 		);
 		const user = interaction.user;
 		const prompt = interaction.options.getString('prompt');
+		const model = interaction.options.getString('model') ?? 'gemini-1.5-pro';
 
-		// Check if interaction contains any file and then use different model
+		// Check if interaction contains any image and if yes then prepare it for prompt
+		let chat;
 		const file = interaction.options.getAttachment('image');
 		if (file) {
-			try {
-				const response = await Gemini.imagePrompt(prompt, file);
-				const embed = new EmbedBuilder()
-					.setColor('#4c86e3')
-					.setAuthor({ name: `${user.username} request:`, iconURL: user.avatarURL() })
-					.setFooter({ text: 'Google Gemini Pro' })
-					.setTimestamp(new Date())
-					.setDescription(`${prompt}\n## Gemini AI response:\n${response}`)
-					.setImage(file.url);
-
-				return interaction.editReply({ content: '', embeds: [embed] });
-			} catch (error) {
-				console.log(error);
-				if (error.text) {
-					return await interaction.editReply(error.text);
-				} else {
-					return await interaction.editReply('```' + error.message + '```');
-				}
+			chat = await prepareImagePrompt(prompt, file);
+			if (chat.error) {
+				return await interaction.editReply(createErrorEmbed(chat.error));
 			}
+		} else {
+			chat = [
+				{
+					role: 'user',
+					parts: [
+						{
+							text: prompt,
+						},
+					],
+				},
+			];
 		}
 
-		const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+		// Fetching Gemini API
+		const response = await fetchGemini(chat, { model: model });
+		if (response.error) {
+			console.log(response.error);
+			return await interaction.editReply(createErrorEmbed(response.error));
+		}
 
-		// Disable all safety settings
-		const safetySettings = Gemini.safetySettings;
+		// Create and send embeds
+		const userName = user.globalName || user.username;
+		const botName = interaction.client.user.globalName || interaction.client.user.username;
 
-		const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash', safetySettings });
+		const question = new EmbedBuilder()
+			.setColor('#8779CB')
+			.setAuthor({ name: `${userName}:`, iconURL: user.avatarURL() })
+			.setDescription(prompt);
 
-		const result = await model.generateContent(prompt).catch((error) => {
-			console.log(error);
-			return interaction.editReply('```' + error + '```');
-		});
+		if (file) {
+			question.setImage(file.url);
+		}
 
-		try {
-			const response = result.response.text();
-			const embed = new EmbedBuilder()
+		// 2000 chars limit for single message
+		if (response.length <= 2000) {
+			const answer = new EmbedBuilder()
 				.setColor('#4c86e3')
-				.setAuthor({ name: `${user.username} request:`, iconURL: user.avatarURL() })
-				.setFooter({ text: 'Google Gemini Pro' })
+				.setAuthor({
+					name: `${botName}:`,
+					iconURL: interaction.client.user.avatarURL(),
+				})
+				.setFooter({ text: model })
 				.setTimestamp(new Date())
-				.setDescription(`${prompt}\n## Gemini AI response:\n${response}`);
+				.setDescription(response);
 
-			return interaction.editReply({ content: '', embeds: [embed] });
-		} catch (error) {
-			console.log(error);
+			return interaction.editReply({ content: '', embeds: [question, answer] });
+		} else {
+			const responseParts = splitTextWithWordWrap(response, 2000);
+			console.log(responseParts);
+			const embeds = [];
 
-			if (error.response.promptFeedback?.blockReason == 'SAFETY') {
-				let reply = 'Response was blocked because of safety reasons:\n```';
-				for (const rating of error.response.promptFeedback.safetyRatings) {
-					reply += `\n- ${rating.category}: ${rating.probability}`;
-				}
-				reply += '```';
-				return await interaction.editReply(reply);
+			const answer = new EmbedBuilder()
+				.setColor('#4c86e3')
+				.setAuthor({
+					name: `${botName}:`,
+					iconURL: interaction.client.user.avatarURL(),
+				})
+				.setDescription(responseParts[0]);
+
+			responseParts.shift();
+
+			for (const part of responseParts) {
+				const answerPart = new EmbedBuilder().setColor('#4c86e3').setDescription(part);
+				embeds.push(answerPart);
 			}
 
-			return await interaction.editReply('```' + error + '```');
+			embeds.at(-1).setFooter({ text: model });
+			embeds.at(-1).setTimestamp(new Date());
+
+			return interaction.editReply({ content: '', embeds: [question, answer, ...embeds] });
 		}
 	},
 };

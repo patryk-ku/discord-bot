@@ -1,18 +1,27 @@
-const { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } = require('@google/generative-ai');
+const fetch = require('node-fetch');
+const { HttpsProxyAgent } = require('https-proxy-agent');
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-exports.imagePrompt = async (prompt, attachment) => {
+/**
+ * Prepares a prompt object with an image, ready to be sent as an API request.
+ *
+ * @param {string} text - The text content of the prompt.
+ * @param {object} attachment - An object containing attachment information.
+ * @returns {Promise<object>} A promise resolving to an object containing the prompt and base64 encoded image, ready for API request.
+ */
+exports.prepareImagePrompt = async (text, attachment) => {
 	// Check image type
 	const allowedImageTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'image/heif'];
 	if (!allowedImageTypes.includes(attachment.contentType)) {
-		throw {
-			text: 'File type not supported. (Allowed file types: **.png, .jpg, .webp, .heic, .heif**)',
+		return {
+			error: 'File type not supported. (Allowed file types: **.png, .jpg, .webp, .heic, .heif**)',
 		};
 	}
 
-	// Check image size. Max 4 MB for enire request so I let 2,75 for image because of base64 conversion rate
-	const maxImageSize = 1024 * 1024 * 2.75;
+	// Check image size. Max 20 MB for enire request so I let 12 MB for image because of base64 conversion rate
+	const maxImageSize = 1024 * 1024 * 12;
 	if (Number(attachment.size) > maxImageSize) {
-		throw { text: 'File too big. (Max file size is **2,75 MB**)' };
+		return { error: 'File too big. (Max file size is **12 MB**)' };
 	}
 
 	// Donwnload image to buffer
@@ -22,93 +31,42 @@ exports.imagePrompt = async (prompt, attachment) => {
 		buffer = await response.arrayBuffer();
 	} catch (error) {
 		console.log(error);
-		throw { text: 'Failed to download image.' };
+		return { error: 'Failed to download image.' };
 	}
 
-	// Init model with settings
-	const generationConfig = this.generationConfig;
-	const safetySettings = this.safetySettings;
-
-	const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-	const model = genAI.getGenerativeModel({
-		model: 'gemini-1.5-flash',
-		generationConfig,
-		safetySettings,
-	});
-	const image = {
-		inlineData: {
-			data: Buffer.from(buffer).toString('base64'),
-			mimeType: 'image/png',
+	// Prepare prompt
+	const prompt = [
+		{
+			parts: [
+				{
+					text: text,
+				},
+				{
+					inlineData: {
+						data: Buffer.from(buffer).toString('base64'),
+						mimeType: attachment.contentType,
+					},
+				},
+			],
 		},
-	};
+	];
 
-	// Make api call
-	let result;
-	try {
-		result = await model.generateContent([prompt, image]).catch((error) => {
-			console.log(error);
-			console.log('Retrying request');
-			// Retry request
-			model.generateContent([prompt, image]);
-		});
-	} catch (error) {
-		console.log(error);
-		throw error;
-	}
-
-	// Return response or error if blocked
-	try {
-		const response = result.response.text();
-		return response;
-	} catch (error) {
-		console.log(error);
-
-		if (error.response.promptFeedback?.blockReason == 'SAFETY') {
-			let reply = 'Response was blocked because of safety reasons:\n```';
-			for (const rating of error.response.promptFeedback.safetyRatings) {
-				reply += `\n- ${rating.category}: ${rating.probability}`;
-			}
-			reply += '```';
-			throw { text: reply };
-		} else if (error.response.promptFeedback?.blockReason == 'OTHER') {
-			// const reply = '## ' + error.message;
-			const reply = '### Response was blocked due to OTHER reason.';
-			throw { text: reply };
-		}
-
-		throw error;
-	}
+	return prompt;
 };
 
-exports.safetySettings = [
-	{
-		category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-		threshold: HarmBlockThreshold.BLOCK_NONE,
-	},
-	{
-		category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-		threshold: HarmBlockThreshold.BLOCK_NONE,
-	},
-	{
-		category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-		threshold: HarmBlockThreshold.BLOCK_NONE,
-	},
-	{
-		category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-		threshold: HarmBlockThreshold.BLOCK_NONE,
-	},
-];
-
-exports.generationConfig = {
-	maxOutputTokens: 400,
-};
-
-// TODO: WIP Switching to REST API instead of Google gemini node module. Romove everything above later and use only functions below:
-const fetch = require('node-fetch');
-const { HttpsProxyAgent } = require('https-proxy-agent');
-
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
+/**
+ * Executes a request to the Gemini API with the provided chat history and settings.
+ *
+ * @async
+ * @param {Array<Object>} chatHistory - An array of objects representing the chat history.
+ * @param {Object} [settings={}] - An object containing settings for the API.
+ * @param {number} [settings.maxOutputTokens] - Maximum number of tokens in response.
+ * @param {number} [settings.temperature=1.0] - A temperature value between 0.0 and 2.0. Defaults to 1.0.
+ *                                            This controls the creativity of the response (higher values are more creative).
+ * @param {string} [settings.model="gemini-1.5-flash"] - The name of the model to use. Defaults to "gemini-1.5-flash".
+ * @returns {Promise<string|Object>} - A Promise that resolves to either the response from the Gemini API
+ *                                     as a string or an object with an "error" key containing the error description.
+ */
 exports.fetchGemini = async (chatHistory, settings = {}) => {
 	let model = 'gemini-1.5-flash';
 	if (settings?.model) model = settings.model;
@@ -136,11 +94,13 @@ exports.fetchGemini = async (chatHistory, settings = {}) => {
 				threshold: 'BLOCK_NONE',
 			},
 		],
-		generationConfig: {
-			// 	temperature: 1,
-		},
+		generationConfig: {},
 	};
 
+	// Parse generationConfig settings
+	if (settings?.config?.maxOutputTokens) {
+		data.generationConfig.maxOutputTokens = settings.config.maxOutputTokens;
+	}
 	if (settings?.config?.temperature) {
 		data.generationConfig.temperature = settings.config.temperature;
 	}
@@ -148,9 +108,9 @@ exports.fetchGemini = async (chatHistory, settings = {}) => {
 	const requestOptions = {
 		method: 'post',
 		body: JSON.stringify(data),
-		// agent: proxyAgent,
 	};
 
+	// Use proxy for API call if proxy ip set in .env file
 	let proxyAgent;
 	if (process.env.PROXY_URL) {
 		proxyAgent = new HttpsProxyAgent(process.env.PROXY_URL);
