@@ -76,6 +76,10 @@ module.exports = {
 			let username;
 
 			if (!username) {
+				username = await interaction.client.users?.cache.get(id)?.globalName;
+			}
+
+			if (!username) {
 				username = await interaction.client.users?.cache.get(id)?.username;
 			}
 
@@ -105,7 +109,8 @@ module.exports = {
 
 		for (const message of messages.values()) {
 			if (message[1].content?.length > 0) {
-				chatHistory += `${message[1].author.username}: ${await parseMentions(message[1].content)}\n\n`;
+				const userName = message[1].author.globalName || message[1].author.username;
+				chatHistory += `${userName}: ${await parseMentions(message[1].content)}\n\n`;
 			}
 		}
 
