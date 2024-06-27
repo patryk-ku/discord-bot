@@ -126,8 +126,9 @@ module.exports = {
 			case 'update': {
 				await interaction.deferReply();
 
-				const embed = new EmbedBuilder()
-					.setDescription('Executing `git pull`, please wait...');
+				const embed = new EmbedBuilder().setDescription(
+					'Executing `git pull`, please wait...'
+				);
 
 				await interaction.editReply({ embeds: [embed] });
 
@@ -187,8 +188,9 @@ module.exports = {
 				await interaction.deferReply();
 				const name = interaction.options.getString('name');
 
-				const embed = new EmbedBuilder()
-					.setDescription(`Executing \`git checkout ${name}\`, please wait...`);
+				const embed = new EmbedBuilder().setDescription(
+					`Executing \`git checkout ${name}\`, please wait...`
+				);
 
 				await interaction.editReply({ embeds: [embed] });
 
@@ -201,13 +203,14 @@ module.exports = {
 					return await interaction.editReply({ embeds: [embed] });
 				}
 
-				if (stderr.length > 0) {
-					embed.setDescription(`### Error:\n \`\`\`${stdout}\`\`\``);
-					return await interaction.editReply({ embeds: [embed] });
-				}
+				// TODO: fix later when steerr
+				// if (stderr.length > 0) {
+				// 	embed.setDescription(`### Error:\n \`\`\`${stdout}\`\`\``);
+				// 	return await interaction.editReply({ embeds: [embed] });
+				// }
 
 				embed.setDescription(
-					`### Command output:\n \`\`\`${stdout}\`\`\` \nAfter a successful branch change, manually run the </config restart:1186353226811969728> command.`
+					`### \`git checkout ${name}\` output:\n \`\`\`${stdout + stderr}\`\`\` \nAfter a successful branch change, manually run the </config update:1186353226811969728> command.`
 				);
 				await interaction.editReply({ embeds: [embed] });
 
