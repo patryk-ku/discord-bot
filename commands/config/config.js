@@ -142,12 +142,13 @@ module.exports = {
 					return await interaction.editReply({ embeds: [embed] });
 				}
 
-				if (stderr.length > 0) {
-					embed.setDescription(`### Error:\n \`\`\`${stdout}\`\`\``);
-					return await interaction.editReply({ embeds: [embed] });
-				}
+				// TODO: git commands outputs to stderr even if there is no error
+				// if (stderr.length > 0) {
+				// 	embed.setDescription(`### Error:\n \`\`\`${stdout}\`\`\``);
+				// 	return await interaction.editReply({ embeds: [embed] });
+				// }
 
-				const output = `### \`git pull\` output:\n \`\`\`${stdout}\`\`\``;
+				const output = `### \`git pull\` output:\n \`\`\`${stdout + stderr}\`\`\``;
 
 				// Return if no updates
 				if (stdout.includes('Already up to date.')) {
