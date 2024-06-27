@@ -103,6 +103,8 @@ These commands can only be used by the owner of an instance of this bot
 | `/config status` | Set bot status. |
 | `/config activity` | Set bot activity. |
 | `/config restart` | Restart bot (use only when hosting a bot with any process manager for node.js, default for this bot is [pm2](https://pm2.keymetrics.io/)). |
+| `/config update` | Git pull from current branch. |
+| `/config branch` | Change git branch. |
 
 ### Debug commands
 
