@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, AttachmentBuilder } = require('discord.js');
+const { SlashCommandBuilder, AttachmentBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('node:fs');
 const { exec } = require('child_process');
 const util = require('util');
@@ -6,19 +6,25 @@ const validator = require('validator');
 const helperFunctions = require('../../helpers/functions');
 // promisify exec:
 const execPromise = util.promisify(exec);
+const fetch = require('node-fetch');
+const cheerio = require('cheerio');
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('embed')
 		.setDescription('Embeds video from given url (insta/reddit/twitter etc).')
-		.addStringOption(option =>
-			option.setName('url')
+		.addStringOption((option) =>
+			option
+				.setName('url')
 				.setDescription('The url/link to page with video.')
-				.setRequired(true))
+				.setRequired(true)
+		)
 		.setDMPermission(false),
 	async execute(interaction) {
 		await interaction.deferReply();
-		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+		console.log(
+			`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`
+		);
 		const url = interaction.options.getString('url');
 
 		// Validate if link
@@ -30,13 +36,26 @@ module.exports = {
 
 		// Blacklisted urls (TODO: add more later)
 		const blacklist = [
-			{ name: 'YouTube', regex: new RegExp(/^https?:\/\/(www\.)?(m\.)?(youtube|youtu)\.(com|be)(?:\/.*)?$/gm) },
-			{ name: 'Vimeo', regex: new RegExp(/^https?:\/\/(www\.)?(player\.)?(vimeo)\.com(?:\/.*)?$/gm) },
-			{ name: 'Twitch', regex: new RegExp(/^https?:\/\/(www\.)?(clips\.)?(twitch)\.tv(?:\/.*)?$/gm) },
+			{
+				name: 'YouTube',
+				regex: new RegExp(
+					/^https?:\/\/(www\.)?(m\.)?(youtube|youtu)\.(com|be)(?:\/.*)?$/gm
+				),
+			},
+			{
+				name: 'Vimeo',
+				regex: new RegExp(/^https?:\/\/(www\.)?(player\.)?(vimeo)\.com(?:\/.*)?$/gm),
+			},
+			{
+				name: 'Twitch',
+				regex: new RegExp(/^https?:\/\/(www\.)?(clips\.)?(twitch)\.tv(?:\/.*)?$/gm),
+			},
 		];
 		for (const site of blacklist) {
 			if (site.regex.test(url)) {
-				return interaction.editReply(`\`${url}\` download canceled: You do not need to use a bot to embed video from the **${site.name}** because videos from this site embed correctly on discord.`);
+				return interaction.editReply(
+					`\`${url}\` download canceled: You do not need to use a bot to embed video from the **${site.name}** because videos from this site embed correctly on discord.`
+				);
 			}
 		}
 
@@ -51,7 +70,9 @@ module.exports = {
 
 		// Downloading video using yt-dlp
 		try {
-			const { error, stdout, stderr } = await execPromise(`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4)"`);
+			const { error, stdout, stderr } = await execPromise(
+				`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4)"`
+			);
 			if (error) {
 				console.log(error);
 			}
@@ -61,11 +82,15 @@ module.exports = {
 
 			console.log(stdout);
 			if (stdout.includes('File is larger than max-filesize')) {
-				return interaction.editReply(`\`${url}\` - ❌ Download failed (╥﹏╥). Max file size exceeded.`);
+				return interaction.editReply(
+					`\`${url}\` - ❌ Download failed (╥﹏╥). Max file size exceeded.`
+				);
 			}
 		} catch (error) {
 			if (error.stderr.includes('ERROR: Unsupported URL')) {
-				return interaction.editReply(`\`${url}\` - ❌ Download failed (╥﹏╥). Unsupported URL.`);
+				return interaction.editReply(
+					`\`${url}\` - ❌ Download failed (╥﹏╥). Unsupported URL.`
+				);
 			}
 			console.log(`error: ${error.message}`);
 			return interaction.editReply(`\`${url}\` - ❌ Download failed (╥﹏╥)`);
@@ -76,11 +101,64 @@ module.exports = {
 		let fileSize = await fs.promises.stat(filePath);
 		fileSize = fileSize.size / (1024 * 1024);
 
+		// Instagram rich embed (WIP)
+		let isRichEmbed = false;
+		const instaRegex = /^(https?:\/\/)?(www\.)?instagram\.com(\/.*)?$/i;
+		let embed;
+		if (instaRegex.test(url)) {
+			try {
+				const response = await fetch(url);
+				const html = await response.text();
+				const $ = cheerio.load(html);
+
+				const metaTag = $('meta[property="og:description"]').attr('content');
+				const data = metaTag.split('\n')[0];
+				const header = data.split('\n')[0];
+
+				let title = header.split(':')[1].trim();
+				if (title.at(0) === '"') {
+					title = title.slice(1);
+				}
+				if (title.at(-1) === '"') {
+					title = title.slice(0, -1);
+				}
+
+				const description = header.split(':')[0];
+				const author = description.split('-')[1];
+				const stats = description.split('-')[0];
+
+				let hashtags = metaTag.match(/#[a-zA-Z0-9_]+/g);
+				let hastagString = '';
+				if (hashtags?.length > 0) {
+					hashtags = hashtags.map((hashtag) => `\`${hashtag}\``);
+					hastagString = hashtags.join(' ');
+					hastagString += '\n';
+				}
+
+				embed = new EmbedBuilder()
+					.setColor('#DD297A')
+					.setTitle(title)
+					.setDescription(`${stats}\n${hastagString}\`\`\`${url}\`\`\``)
+					.setFooter({
+						text: `Instagram ┃ ${author}`,
+						iconURL:
+							'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png',
+					});
+
+				isRichEmbed = true;
+			} catch (error) {
+				console.error(error);
+				isRichEmbed = false;
+			}
+		}
+
 		// Spliting video into parts in needed:
 		if (fileSize > discordUploadLimit) {
 			console.log('Spliting video into parts.');
 			try {
-				const { error, stdout, stderr } = await execPromise(`MP4Box -splits ${discordUploadLimit * 1000} ${filePath}`);
+				const { error, stdout, stderr } = await execPromise(
+					`MP4Box -splits ${discordUploadLimit * 1000} ${filePath}`
+				);
 				if (error) {
 					console.log(error);
 				}
@@ -91,7 +169,9 @@ module.exports = {
 			} catch (error) {
 				console.log(`error: ${error}`);
 				helperFunctions.deleteFile(filePath);
-				return interaction.editReply('Failed to split video into parts and due to the file weight limit, the whole file cannot be sent.');
+				return interaction.editReply(
+					'Failed to split video into parts and due to the file weight limit, the whole file cannot be sent.'
+				);
 			}
 
 			console.log('Video fragments:');
@@ -108,22 +188,35 @@ module.exports = {
 				}
 			}
 
-			await interaction.editReply(`Uploading \`${url}\` to discord in **${fragmentsList.length} parts** (because the ${discordUploadLimit}MB limit has been exceeded) please wait...`);
+			await interaction.editReply(
+				`Uploading \`${url}\` to discord in **${fragmentsList.length} parts** (because the ${discordUploadLimit}MB limit has been exceeded) please wait...`
+			);
 
 			console.log('Uploading files.');
 			for (const [index, fragment] of fragmentsList.entries()) {
 				const file = new AttachmentBuilder(fragment);
 				try {
 					if (index == 0) {
-						await interaction.editReply({ content: `## Requested video:\n\`\`\`${url}\`\`\`\n## Part 1`, files: [file] });
+						await interaction.editReply({
+							content: `## Requested video:\n\`\`\`${url}\`\`\`\n## Part 1`,
+							files: [file],
+						});
 					} else if (index == fragmentsList.length - 1) {
-						await interaction.followUp({ content: `## Part ${index + 1} (last)`, files: [file] });
+						await interaction.followUp({
+							content: `## Part ${index + 1} (last)`,
+							files: [file],
+						});
 					} else {
-						await interaction.followUp({ content: `## Part ${index + 1}`, files: [file] });
+						await interaction.followUp({
+							content: `## Part ${index + 1}`,
+							files: [file],
+						});
 					}
 					console.log(`File sent succesfully: ${fragment}`);
 				} catch (error) {
-					await interaction.followUp(`\`${url}\` - Error, failed to upload **part ${index}** of video to discord servers. Try again.`);
+					await interaction.followUp(
+						`\`${url}\` - Error, failed to upload **part ${index}** of video to discord servers. Try again.`
+					);
 					console.log(error);
 				}
 			}
@@ -140,10 +233,24 @@ module.exports = {
 			console.log(`Uploading file: ${filePath}`);
 			await interaction.editReply('Uploading file to discord...');
 			// await interaction.editReply({ content: `\`${url}\``, files: [file] });
-			await interaction.editReply({ content: `## Requested video:\n\`\`\`${url}\`\`\``, files: [file] });
+
+			const replyObject = {
+				// content: `## Requested video:\n\`\`\`${url}\`\`\``,
+				content: '',
+				files: [file],
+				// embeds: [embed],
+			};
+
+			if (isRichEmbed) {
+				replyObject.embeds = [embed];
+			}
+
+			await interaction.editReply(replyObject);
 			console.log('File sent succesfully');
 		} catch (error) {
-			await interaction.editReply(`\`${url}\` - Error, failed to upload video to discord servers.`);
+			await interaction.editReply(
+				`\`${url}\` - Error, failed to upload video to discord servers.`
+			);
 			console.log(error);
 		}
 
