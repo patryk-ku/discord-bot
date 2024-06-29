@@ -102,7 +102,6 @@ module.exports = {
 		fileSize = fileSize.size / (1024 * 1024);
 
 		// Instagram rich embed (WIP)
-		let isRichEmbed = false;
 		const instaRegex = /^(https?:\/\/)?(www\.)?instagram\.com(\/.*)?$/i;
 		let embed;
 		if (instaRegex.test(url)) {
@@ -144,12 +143,23 @@ module.exports = {
 						iconURL:
 							'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png',
 					});
-
-				isRichEmbed = true;
 			} catch (error) {
 				console.error(error);
-				isRichEmbed = false;
+				// Fallback embed without fancy features
+				embed = new EmbedBuilder()
+					.setColor('#DD297A')
+					.setDescription(`\`\`\`${url}\`\`\``)
+					.setFooter({
+						text: 'Instagram',
+						iconURL:
+							'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png',
+					});
 			}
+		} else {
+			// Default embed for unsuported sites
+			embed = new EmbedBuilder()
+				.setDescription(`\`\`\`${url}\`\`\``)
+				.setFooter({ text: 'Requested video' });
 		}
 
 		// Spliting video into parts in needed:
@@ -232,20 +242,12 @@ module.exports = {
 		try {
 			console.log(`Uploading file: ${filePath}`);
 			await interaction.editReply('Uploading file to discord...');
-			// await interaction.editReply({ content: `\`${url}\``, files: [file] });
 
-			const replyObject = {
-				// content: `## Requested video:\n\`\`\`${url}\`\`\``,
+			await interaction.editReply({
 				content: '',
 				files: [file],
-				// embeds: [embed],
-			};
-
-			if (isRichEmbed) {
-				replyObject.embeds = [embed];
-			}
-
-			await interaction.editReply(replyObject);
+				embeds: [embed],
+			});
 			console.log('File sent succesfully');
 		} catch (error) {
 			await interaction.editReply(
