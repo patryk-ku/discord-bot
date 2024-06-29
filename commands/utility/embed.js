@@ -1,11 +1,9 @@
 const { SlashCommandBuilder, AttachmentBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('node:fs');
-const { exec } = require('child_process');
 const util = require('util');
 const validator = require('validator');
 const helperFunctions = require('../../helpers/functions');
-// promisify exec:
-const execPromise = util.promisify(exec);
+const exec = util.promisify(require('child_process').exec);
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const { createWarningEmbed, createErrorEmbed } = require('../../helpers/functions.js');
@@ -74,8 +72,8 @@ module.exports = {
 
 		// Downloading video using yt-dlp
 		try {
-			const { error, stdout, stderr } = await execPromise(
-				`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4)"`
+			const { error, stdout, stderr } = await exec(
+				`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4)[vcodec!=h265][filesize<8M]+ba/(mp4)[vcodec!=h265]+ba/(mp4)+ba"`
 			);
 			if (error) {
 				console.log(error);
@@ -160,17 +158,97 @@ module.exports = {
 					});
 			}
 		} else {
-			// Default embed for unsuported sites
-			embed = new EmbedBuilder()
-				.setDescription(`\`\`\`${url}\`\`\``)
-				.setFooter({ text: 'Requested video' });
+			// Universal embed for all sites
+			try {
+				const { stdout } = await exec(`yt-dlp --dump-json ${url}`);
+				const json = JSON.parse(stdout);
+				// console.log('title: ', json.title);
+				// console.log('author: ', json.uploader);
+				// console.log('site: ', json.webpage_url_domain);
+				// console.log('description: ', json.description);
+				// console.log('tags: ', json.tags);
+				// console.log('timestamp: ', json.timestamp);
+				// console.log('given url: ', url);
+				// console.log('short url: ', json.webpage_url);
+
+				embed = new EmbedBuilder();
+				let descriptionString = '';
+
+				if (json.title) {
+					if (
+						json.title !== json?.description &&
+						json?.webpage_url_domain !== 'twitter.com'
+					) {
+						embed.setTitle(json.title);
+					}
+				}
+
+				if (json.description) descriptionString += json.description;
+				descriptionString = descriptionString.replace(/#(\w+)/g, ' `#$1` ');
+
+				let shortUrl = url;
+				if (json.webpage_url) {
+					shortUrl = json.webpage_url;
+				}
+				descriptionString += `\n\`\`\`${shortUrl}\`\`\``;
+
+				embed.setDescription(descriptionString);
+
+				// footer
+				let footerString = '';
+				if (json.webpage_url_domain) {
+					let webpage = json.webpage_url_domain;
+					webpage = webpage.replace(/\.com$|\.net$/i, '');
+					webpage = webpage.charAt(0).toUpperCase() + webpage.slice(1);
+					footerString += webpage;
+				}
+				const footerObject = { text: footerString };
+				switch (footerString) {
+					case 'X':
+					case 'Twitter':
+						footerObject.text = 'Twitter';
+						footerObject.iconURL =
+							'https://upload.wikimedia.org/wikipedia/commons/f/f2/Logo_Twitter.png';
+						embed.setColor('#169CF0');
+						break;
+
+					case 'Tiktok':
+						footerObject.text = 'TikTok';
+						footerObject.iconURL = 'https://i.imgur.com/AaYLyBC.png';
+						embed.setColor('#00F2EA');
+						break;
+
+					case 'Reddit':
+						footerObject.iconURL = 'https://i.imgur.com/fD625kA.png';
+						embed.setColor('#FF4300');
+						break;
+
+					default:
+						break;
+				}
+				if (json.uploader) {
+					if (footerObject.text.length > 0) {
+						footerObject.text += ' ┃ by: ';
+					}
+					footerObject.text += json.uploader;
+				}
+				embed.setFooter(footerObject);
+
+				if (json.timestamp) embed.setTimestamp(json.timestamp * 1000);
+			} catch (error) {
+				console.log();
+				console.log(error);
+				embed = new EmbedBuilder()
+					.setDescription(`\`\`\`${url}\`\`\``)
+					.setFooter({ text: 'Requested video' });
+			}
 		}
 
 		// Spliting video into parts in needed:
 		if (fileSize > discordUploadLimit) {
 			console.log('Spliting video into parts.');
 			try {
-				const { error, stdout, stderr } = await execPromise(
+				const { error, stdout, stderr } = await exec(
 					`MP4Box -splits ${discordUploadLimit * 1000} ${filePath}`
 				);
 				if (error) {
