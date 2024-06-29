@@ -8,6 +8,7 @@ const helperFunctions = require('../../helpers/functions');
 const execPromise = util.promisify(exec);
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
+const { createWarningEmbed, createErrorEmbed } = require('../../helpers/functions.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -29,9 +30,10 @@ module.exports = {
 
 		// Validate if link
 		if (!validator.isURL(url)) {
-			console.log('Invalid url');
-			interaction.editReply(`\`${url}\` is invalid url.`);
-			return;
+			console.log('Invalid url.');
+			return await interaction.editReply(
+				createWarningEmbed(`The given url: \`${url}\` is invalid.`)
+			);
 		}
 
 		// Blacklisted urls (TODO: add more later)
@@ -53,8 +55,10 @@ module.exports = {
 		];
 		for (const site of blacklist) {
 			if (site.regex.test(url)) {
-				return interaction.editReply(
-					`\`${url}\` download canceled: You do not need to use a bot to embed video from the **${site.name}** because videos from this site embed correctly on discord.`
+				return await interaction.editReply(
+					createWarningEmbed(
+						`Canceled download of: \`${url}\`. You do not need to use a bot to embed video from the **${site.name}** because videos from this site embed correctly on discord without any additional commands or utilites.`
+					)
 				);
 			}
 		}
@@ -82,18 +86,18 @@ module.exports = {
 
 			console.log(stdout);
 			if (stdout.includes('File is larger than max-filesize')) {
-				return interaction.editReply(
-					`\`${url}\` - ❌ Download failed (╥﹏╥). Max file size exceeded.`
+				return await interaction.editReply(
+					createErrorEmbed(`Max file size exceeded. \`${url}\``, 'Download failed')
 				);
 			}
 		} catch (error) {
 			if (error.stderr.includes('ERROR: Unsupported URL')) {
-				return interaction.editReply(
-					`\`${url}\` - ❌ Download failed (╥﹏╥). Unsupported URL.`
+				return await interaction.editReply(
+					createErrorEmbed(`Unsupported URL. \`${url}\``, 'Download failed')
 				);
 			}
 			console.log(`error: ${error.message}`);
-			return interaction.editReply(`\`${url}\` - ❌ Download failed (╥﹏╥)`);
+			return await interaction.editReply(createErrorEmbed(`Download failed. \`${url}\``));
 		}
 
 		const filePath = `./tmpfiles/${name}.mp4`;
@@ -179,8 +183,12 @@ module.exports = {
 			} catch (error) {
 				console.log(`error: ${error}`);
 				helperFunctions.deleteFile(filePath);
-				return interaction.editReply(
-					'Failed to split video into parts and due to the file weight limit, the whole file cannot be sent.'
+
+				return await interaction.editReply(
+					createErrorEmbed(
+						`Failed to split video into parts and due to the file weight limit, the whole file cannot be sent. \`${url}\``,
+						'Download failed'
+					)
 				);
 			}
 
@@ -251,8 +259,9 @@ module.exports = {
 			console.log('File sent succesfully');
 		} catch (error) {
 			await interaction.editReply(
-				`\`${url}\` - Error, failed to upload video to discord servers.`
+				createErrorEmbed(`Failed to upload video to discord server. \`${url}\``)
 			);
+
 			console.log(error);
 		}
 
