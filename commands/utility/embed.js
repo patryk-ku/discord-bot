@@ -164,7 +164,7 @@ module.exports = {
 		} else {
 			// Universal embed for all sites
 			try {
-				const { stdout } = await exec(`yt-dlp --dump-json ${url}`);
+				const { stdout } = await exec(`yt-dlp --dump-json "${url}"`);
 				const json = JSON.parse(stdout);
 				// console.log('title: ', json.title);
 				// console.log('author: ', json.uploader);
