@@ -206,7 +206,9 @@ module.exports = {
 				let footerString = '';
 				if (json.webpage_url_domain) {
 					let webpage = json.webpage_url_domain;
+					// Delete .com .net from end of site name and m. from the beginning
 					webpage = webpage.replace(/\.com$|\.net$/i, '');
+					webpage = webpage.replace(/^m\./, '');
 					webpage = webpage.charAt(0).toUpperCase() + webpage.slice(1);
 					footerString += webpage;
 				}
@@ -240,11 +242,11 @@ module.exports = {
 					default:
 						break;
 				}
-				if (json.uploader) {
+				if (json.uploader && json?.uploader?.length < 50) {
 					if (footerObject.text.length > 0) {
 						footerObject.text += ' ┃ by: ';
 					}
-					footerObject.text += json.uploader;
+					footerObject.text += json.uploader.replace(/\r?\n|\r/g, ' ');
 				}
 				embed.setFooter(footerObject);
 
