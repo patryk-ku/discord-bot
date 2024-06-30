@@ -73,7 +73,7 @@ module.exports = {
 		// Downloading video using yt-dlp
 		try {
 			const { error, stdout, stderr } = await exec(
-				`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4)[vcodec!=h265][filesize<8M]+ba/(mp4)[vcodec!=h265]+ba/(mp4)+ba"`
+				`yt-dlp "${url}" -o "./tmpfiles/${name}.%(ext)s" --max-filesize ${maxFileSize} -f "(mp4)[vcodec!=h265][filesize<8M]+ba/(mp4)[vcodec!=h265]+ba/(mp4)+ba/(mp4)[vcodec!=h265][filesize<8M]/(mp4)[vcodec!=h265]/(mp4)"`
 			);
 			if (error) {
 				console.log(error);
