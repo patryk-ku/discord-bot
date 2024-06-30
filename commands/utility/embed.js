@@ -116,11 +116,14 @@ module.exports = {
 				const data = metaTag.split('\n')[0];
 				const header = data.split('\n')[0];
 
-				let title = header.split(':')[1].trim();
-				if (title.at(0) === '"') {
+				let title = header.split(':')[1]?.trim();
+				if (title?.at(-1) === '.') {
+					title = title.slice(0, -1);
+				}
+				if (title?.at(0) === '"') {
 					title = title.slice(1);
 				}
-				if (title.at(-1) === '"') {
+				if (title?.at(-1) === '"') {
 					title = title.slice(0, -1);
 				}
 
@@ -138,13 +141,14 @@ module.exports = {
 
 				embed = new EmbedBuilder()
 					.setColor('#DD297A')
-					.setTitle(title)
 					.setDescription(`${stats}\n${hastagString}\`\`\`${url}\`\`\``)
 					.setFooter({
 						text: `Instagram ┃ ${author}`,
 						iconURL:
 							'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png',
 					});
+
+				if (title?.length > 2) embed.setTitle(title);
 			} catch (error) {
 				console.error(error);
 				// Fallback embed without fancy features
@@ -223,6 +227,12 @@ module.exports = {
 						embed.setColor('#FF4300');
 						break;
 
+					case 'Facebook':
+						footerObject.iconURL =
+							'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/2023_Facebook_icon.svg/240px-2023_Facebook_icon.svg.png';
+						embed.setColor('#0065FF');
+						break;
+
 					default:
 						break;
 				}
@@ -294,24 +304,23 @@ module.exports = {
 				try {
 					if (index == 0) {
 						await interaction.editReply({
-							content: `## Requested video:\n\`\`\`${url}\`\`\`\n## Part 1`,
-							files: [file],
-						});
-					} else if (index == fragmentsList.length - 1) {
-						await interaction.followUp({
-							content: `## Part ${index + 1} (last)`,
+							content: `### Part 1 of ${fragmentsList.length}`,
 							files: [file],
 						});
 					} else {
-						await interaction.followUp({
-							content: `## Part ${index + 1}`,
+						const messageObject = {
+							content: `### Part ${index + 1} of ${fragmentsList.length}`,
 							files: [file],
-						});
+						};
+						if (index + 1 == fragmentsList.length) messageObject.embeds = [embed];
+						await interaction.followUp(messageObject);
 					}
 					console.log(`File sent succesfully: ${fragment}`);
 				} catch (error) {
 					await interaction.followUp(
-						`\`${url}\` - Error, failed to upload **part ${index}** of video to discord servers. Try again.`
+						createErrorEmbed(
+							`\`${url}\` - Failed to upload **part ${index}** of video to discord servers. Try again later.`
+						)
 					);
 					console.log(error);
 				}
