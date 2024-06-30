@@ -183,7 +183,11 @@ module.exports = {
 						json.title !== json?.description &&
 						json?.webpage_url_domain !== 'twitter.com'
 					) {
-						embed.setTitle(json.title);
+						if (json.title.length > 256) {
+							embed.setTitle(json.title.slice(0, 253) + '...');
+						} else {
+							embed.setTitle(json.title);
+						}
 					}
 				}
 
