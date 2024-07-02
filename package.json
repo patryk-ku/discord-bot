@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
-    "start": "npx pm2 start index.js --name 'discord-bot' --log 'bot.log'",
+    "dev": "NODE_ENV=development nodemon index.js",
+    "start": "NODE_ENV=production npx pm2 start index.js --name 'discord-bot' --log 'bot.log'",
     "restart": "npx pm2 restart 'discord-bot'",
     "reload": "npx pm2 reload 'discord-bot'",
     "stop": "npx pm2 delete 'discord-bot' && npx pm2 kill",
