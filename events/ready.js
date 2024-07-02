@@ -5,6 +5,7 @@ module.exports = {
 	once: true,
 	async execute(client) {
 		console.log(`Ready! Logged in as ${client.user.tag}`);
+		client.users.send(process.env.OWNER_ID, `✅ Ready! Logged in as ${client.user.tag}`);
 
 		try {
 			await client.sequelize.authenticate();
@@ -15,6 +16,10 @@ module.exports = {
 			await client.sequelize.sync();
 		} catch (error) {
 			console.error('Unable to connect to the database:', error);
+			client.users.send(
+				process.env.OWNER_ID,
+				`❌ Unable to connect to the database: ${error}`
+			);
 		}
 	},
 };
