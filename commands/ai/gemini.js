@@ -101,7 +101,6 @@ module.exports = {
 			return interaction.editReply({ content: '', embeds: [question, answer] });
 		} else {
 			const responseParts = splitTextWithWordWrap(response, 2000);
-			console.log(responseParts);
 			const embeds = [];
 
 			const answer = new EmbedBuilder()

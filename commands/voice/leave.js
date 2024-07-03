@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { VoiceConnectionStatus, entersState, getVoiceConnection } = require('@discordjs/voice');
 require('dotenv').config();
 
@@ -13,7 +13,9 @@ module.exports = {
 		}
 
 		await interaction.deferReply();
-		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+		console.log(
+			`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`
+		);
 
 		const connection = getVoiceConnection(interaction.guild.id);
 
@@ -22,7 +24,12 @@ module.exports = {
 		try {
 			await entersState(connection, VoiceConnectionStatus.Destroyed, 5_000);
 			console.log('Bot left voice channel!');
-			await interaction.editReply('Bot left voice channel!');
+
+			const embed = new EmbedBuilder()
+				.setColor('#5CACEC')
+				.setDescription(':musical_note: **Bot left voice channel**');
+
+			await interaction.editReply({ content: '', embeds: [embed] });
 		} catch (error) {
 			console.error(error);
 			await interaction.editReply('Bot failed to left voice channel!');

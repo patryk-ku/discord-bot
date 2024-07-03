@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, EmbedBuilder } = require('discord.js');
 const { joinVoiceChannel, VoiceConnectionStatus, entersState } = require('@discordjs/voice');
 require('dotenv').config();
 
@@ -6,10 +6,12 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('join')
 		.setDescription('Request bot to join a voice channel.')
-		.addChannelOption(option =>
-			option.setName('channel')
+		.addChannelOption((option) =>
+			option
+				.setName('channel')
 				.setDescription('The channel (default the one where you are now).')
-				.addChannelTypes(ChannelType.GuildVoice))
+				.addChannelTypes(ChannelType.GuildVoice)
+		)
 		.setDMPermission(true),
 	async execute(interaction) {
 		if (!process.env.VOICE_COMMANDS) {
@@ -17,8 +19,11 @@ module.exports = {
 		}
 
 		await interaction.deferReply();
-		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
-		const channel = interaction.options.getChannel('channel') ?? interaction.member.voice.channel;
+		console.log(
+			`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`
+		);
+		const channel =
+			interaction.options.getChannel('channel') ?? interaction.member.voice.channel;
 
 		const connection = joinVoiceChannel({
 			channelId: channel.id,
@@ -30,7 +35,12 @@ module.exports = {
 		try {
 			await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
 			console.log('Bot joined voice channel!');
-			await interaction.editReply(`Joined ${channel}.`);
+
+			const embed = new EmbedBuilder()
+				.setColor('#5CACEC')
+				.setDescription(`:musical_note: **Joined channel:** ${channel}`);
+
+			await interaction.editReply({ content: '', embeds: [embed] });
 		} catch (error) {
 			console.error(error);
 			await interaction.editReply(`Failed to join to ${channel}.`);
@@ -53,6 +63,12 @@ module.exports = {
 				console.log('Failed, disconnected...');
 				connection.destroy();
 			}
+		});
+
+		connection.on(VoiceConnectionStatus.Destroyed, (oldState, newState) => {
+			console.log('Voice destroyed');
+			// console.log(`Interupted playing: ${fileName}`);
+			// helperFunctions.deleteFile(fileName);
 		});
 	},
 };
