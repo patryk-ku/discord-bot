@@ -75,13 +75,13 @@ At this moment, access to the Gemini API is free up to 15 queries per minute and
 
 ### Voice
 
-> [!WARNING]
-> These commands are experimental and may not work properly.
-
 | command | description |
 | ----------- | ----------- |
 | `/join` | Request bot to join a voice channel. |
-| `/play` | Request bot to play music from a given link in a voice channel. |
+| `/play` | Play music from a given link in a voice channel, or add to the queue if the bot is already playing music. |
+| `/skip` | Skip to the next song in queue. |
+| `/pause` | Pause playback in voice channel. |
+| `/resume` | Resume playback in voice channel. |
 | `/leave` | Request bot to leave a voice channel. |
 
 ### Administrator commands

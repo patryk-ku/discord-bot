@@ -1,6 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { VoiceConnectionStatus, entersState, getVoiceConnection } = require('@discordjs/voice');
-require('dotenv').config();
+const { createWarningEmbed, createErrorEmbed } = require('../../helpers/functions.js');
+const { embedSmall } = require('../../helpers/voice.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -19,20 +20,23 @@ module.exports = {
 
 		const connection = getVoiceConnection(interaction.guild.id);
 
-		connection.destroy();
+		if (!connection) {
+			return await interaction.editReply(
+				createWarningEmbed('The bot is not in any voice channel on this server')
+			);
+		}
 
 		try {
+			connection.destroy();
 			await entersState(connection, VoiceConnectionStatus.Destroyed, 5_000);
 			console.log('Bot left voice channel!');
 
-			const embed = new EmbedBuilder()
-				.setColor('#5CACEC')
-				.setDescription(':musical_note: **Bot left voice channel**');
-
-			await interaction.editReply({ content: '', embeds: [embed] });
+			await interaction.editReply(embedSmall('Bot left voice channel'));
 		} catch (error) {
 			console.error(error);
-			await interaction.editReply('Bot failed to left voice channel!');
+			return await interaction.editReply(
+				createErrorEmbed('Bot failed to left voice channel')
+			);
 		}
 
 		return;

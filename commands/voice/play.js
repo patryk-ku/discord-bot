@@ -1,16 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const {
-	getVoiceConnection,
-	createAudioPlayer,
-	createAudioResource,
-	AudioPlayerStatus,
-	// StreamType,
-} = require('@discordjs/voice');
+const { getVoiceConnection, createAudioPlayer, AudioPlayerStatus } = require('@discordjs/voice');
 const validator = require('validator');
-require('dotenv').config();
-const ytdl = require('ytdl-core');
-
+const { createWarningEmbed, createErrorEmbed } = require('../../helpers/functions.js');
 const { secondsToHoursMinutes } = require('../../helpers/functions.js');
+const { playNextQueue, embedSmall } = require('../../helpers/voice.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -38,52 +31,18 @@ module.exports = {
 		// Validate given url
 		if (!validator.isURL(url)) {
 			console.log('Invalid url');
-			return interaction.editReply(`\`${url}\` is invalid url.`);
-		}
-
-		// Function to play next url from queue
-		async function playNextQueue(player, queue) {
-			// Exit if queue empty
-			if (queue.length < 1) {
-				console.log('queue empty');
-
-				const embed = new EmbedBuilder()
-					.setColor('#5CACEC')
-					.setDescription(':musical_note: **Queue empty**');
-				interaction.channel.send({
-					embeds: [embed],
-				});
-
-				return;
-			}
-
-			// Get yt stream
-			const stream = ytdl(queue.at(0), { filter: 'audioonly', quality: 'highestaudio' });
-			player.currentTrack = { url: queue.at(0) };
-			queue.shift();
-
-			// Get track info for rich embed
-			const trackInfo = await ytdl.getBasicInfo(player.currentTrack.url);
-			// console.log(trackInfo);
-			// console.log(trackInfo.videoDetails.thumbnails);
-			player.currentTrack.info = {
-				url: trackInfo.videoDetails.video_url,
-				title: trackInfo.videoDetails.title,
-				author: trackInfo.videoDetails.ownerChannelName,
-				duration: trackInfo.videoDetails.lengthSeconds,
-				views: trackInfo.videoDetails.viewCount,
-				thumbnail: trackInfo.videoDetails.thumbnails.at(-2).url,
-			};
-
-			// Create stream and play it
-			const resource = createAudioResource(stream, {
-				// inputType: StreamType.OggOpus,
-				// inputType: StreamType.WebmOpus,
-			});
-			player.play(resource);
+			return await interaction.editReply(
+				createWarningEmbed(`The given url: \`${url}\` is invalid.`)
+			);
 		}
 
 		const connection = getVoiceConnection(interaction.guild.id);
+
+		if (!connection) {
+			return await interaction.editReply(
+				createWarningEmbed('The bot is not in any voice channel on this server')
+			);
+		}
 
 		// Initiate new instance of player if not exists
 		if (!connection.player) {
@@ -100,8 +59,11 @@ module.exports = {
 					.setColor('#FF0000')
 					.setTitle(connection.player.currentTrack.info.title)
 					.setURL(connection.player.currentTrack.info.url)
+					// .setDescription(
+					// 	`${connection.player.currentTrack.info.author} ┃ ${secondsToHoursMinutes(connection.player.currentTrack.info.duration)} ┃ ${connection.player.currentTrack.info.views.toLocaleString('en')} views`
+					// )
 					.setDescription(
-						`${connection.player.currentTrack.info.author} ┃ ${secondsToHoursMinutes(connection.player.currentTrack.info.duration)} ┃ ${connection.player.currentTrack.info.views} views`
+						`duration: **${secondsToHoursMinutes(connection.player.currentTrack.info.duration)}** │ views: **${connection.player.currentTrack.info.views.toLocaleString('pl')}**`
 					)
 					.setThumbnail(connection.player.currentTrack.info.thumbnail);
 
@@ -111,8 +73,11 @@ module.exports = {
 				});
 			});
 
-			connection.player.on('error', (error) => {
+			connection.player.on('error', async (error) => {
 				console.log(error);
+
+				await interaction.channel.send(createErrorEmbed(error));
+
 				playNextQueue(connection.player, connection.queue);
 			});
 
@@ -130,12 +95,7 @@ module.exports = {
 		console.log('queue: ', connection.queue);
 
 		// Inform user about queue update
-		const embed = new EmbedBuilder()
-			.setColor('#5CACEC')
-			.setDescription(`:musical_note: **Added to queue:**\n\`${url}\``);
-		interaction.editReply({
-			embeds: [embed],
-		});
+		interaction.editReply(embedSmall(`Added to queue: \`${url}\``));
 
 		if (connection.player.state.status === AudioPlayerStatus.Playing) {
 			// tmp

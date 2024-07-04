@@ -20,7 +20,7 @@
   "author": "Patryk Kurdziel",
   "license": "MIT",
   "dependencies": {
-    "@discordjs/voice": "^0.16.1",
+    "@discordjs/voice": "^0.17.0",
     "@google/generative-ai": "^0.2.1",
     "@napi-rs/canvas": "^0.1.44",
     "cheerio": "^1.0.0-rc.12",
@@ -29,7 +29,7 @@
     "https-proxy-agent": "^7.0.4",
     "libsodium-wrappers": "^0.7.13",
     "node-fetch": "^2.7.0",
-    "opusscript": "^0.0.8",
+    "opusscript": "^0.1.1",
     "pm2": "^5.3.0",
     "sequelize": "^6.35.0",
     "sqlite3": "^5.1.6",

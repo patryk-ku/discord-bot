@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, ChannelType, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, ChannelType } = require('discord.js');
 const { joinVoiceChannel, VoiceConnectionStatus, entersState } = require('@discordjs/voice');
-require('dotenv').config();
+const { embedSmall } = require('../../helpers/voice.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -36,11 +36,7 @@ module.exports = {
 			await entersState(connection, VoiceConnectionStatus.Ready, 5_000);
 			console.log('Bot joined voice channel!');
 
-			const embed = new EmbedBuilder()
-				.setColor('#5CACEC')
-				.setDescription(`:musical_note: **Joined channel:** ${channel}`);
-
-			await interaction.editReply({ content: '', embeds: [embed] });
+			await interaction.editReply(embedSmall(`Joined channel: ${channel}`));
 		} catch (error) {
 			console.error(error);
 			await interaction.editReply(`Failed to join to ${channel}.`);
