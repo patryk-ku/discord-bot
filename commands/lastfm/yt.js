@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const ytsr = require('ytsr');
+const ytsr = require('@distube/ytsr');
 require('dotenv').config();
 const Lastfm = require('../../helpers/lastfm');
 
