@@ -35,9 +35,8 @@
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
-    "eslint": "^9.19.0",
-    "nodemon": "^3.1.9",
-    "prettier": "^3.4.2"
+    "@biomejs/biome": "1.9.4",
+    "nodemon": "^3.1.9"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
