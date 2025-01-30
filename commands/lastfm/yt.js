@@ -7,9 +7,7 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('yt')
 		.setDescription('Replies with yt search of user now playing song.')
-		.addUserOption(option =>
-			option.setName('user')
-				.setDescription('The user (default you).'))
+		.addUserOption((option) => option.setName('user').setDescription('The user (default you).'))
 		.setDMPermission(true),
 	async execute(interaction) {
 		if (!process.env.LASTFM_API_KEY) {
@@ -17,7 +15,9 @@ module.exports = {
 		}
 
 		await interaction.deferReply();
-		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+		console.log(
+			`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`
+		);
 		const user = interaction.options.getUser('user') ?? interaction.user;
 
 		// Get user nickname from bot database

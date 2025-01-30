@@ -692,7 +692,7 @@ exports.getMatch = async (id, region) => {
 };
 
 exports.getNowPlayingMatch = async (puuid, region) => {
-	const REGION = this.getRouteByRegion(region);
+	const _REGION = this.getRouteByRegion(region);
 
 	let liveMatch;
 	try {

@@ -67,7 +67,9 @@ exports.prepareImagePrompt = async (text, attachment) => {
  */
 exports.fetchGemini = async (chatHistory, settings = {}) => {
 	let model = 'gemini-1.5-flash';
-	if (settings?.model) model = settings.model;
+	if (settings?.model) {
+		model = settings.model;
+	}
 
 	// models: gemini-pro gemini-1.5-pro gemini-1.5-flash
 	const API_URL = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
@@ -107,13 +109,6 @@ exports.fetchGemini = async (chatHistory, settings = {}) => {
 		method: 'post',
 		body: JSON.stringify(data),
 	};
-
-	// Use proxy for API call if proxy ip set in .env file
-	let proxyAgent;
-	if (process.env.PROXY_URL) {
-		proxyAgent = new HttpsProxyAgent(process.env.PROXY_URL);
-		requestOptions.agent = proxyAgent;
-	}
 
 	let response, json;
 

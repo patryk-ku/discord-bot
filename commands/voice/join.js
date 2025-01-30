@@ -42,11 +42,11 @@ module.exports = {
 			await interaction.editReply(`Failed to join to ${channel}.`);
 		}
 
-		connection.on(VoiceConnectionStatus.Ready, (oldState, newState) => {
+		connection.on(VoiceConnectionStatus.Ready, (_oldState, _newState) => {
 			console.log('Connection is in the Ready state!');
 		});
 
-		connection.on(VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
+		connection.on(VoiceConnectionStatus.Disconnected, async (_oldState, _newState) => {
 			console.log('Connection problem, trying to reconnect...');
 			try {
 				await Promise.race([
@@ -54,14 +54,14 @@ module.exports = {
 					entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
 				]);
 				// Seems to be reconnecting to a new channel - ignore disconnect
-			} catch (error) {
+			} catch (_error) {
 				// Seems to be a real disconnect which SHOULDN'T be recovered from
 				console.log('Failed, disconnected...');
 				connection.destroy();
 			}
 		});
 
-		connection.on(VoiceConnectionStatus.Destroyed, (oldState, newState) => {
+		connection.on(VoiceConnectionStatus.Destroyed, (_oldState, _newState) => {
 			console.log('Voice destroyed');
 			// console.log(`Interupted playing: ${fileName}`);
 			// helperFunctions.deleteFile(fileName);

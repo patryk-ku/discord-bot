@@ -49,7 +49,7 @@
 				"useIsNan": "error",
 				"useValidForDirection": "error",
 				"useYield": "error",
-				"noUnusedImports":"error"
+				"noUnusedImports": "error"
 			},
 			"style": {
 				"noVar": "error",

@@ -1,15 +1,19 @@
 exports.getNowPlaying = async (user, nickname) => {
 	let nowPlaying;
 	try {
-		nowPlaying = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=1`)
-			.then(res => {
+		nowPlaying = await fetch(
+			`https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=1`
+		)
+			.then((res) => {
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
 				return res;
 			})
 			.then((res) => res.json())
-			.catch(error => { throw new Error(error); });
+			.catch((error) => {
+				throw new Error(error);
+			});
 	} catch (error) {
 		return { error: this.msg.fetchError(error) };
 	}
@@ -44,15 +48,19 @@ exports.getNowPlaying = async (user, nickname) => {
 exports.getRecentTracks = async (user, nickname, limit) => {
 	let recentTracks;
 	try {
-		recentTracks = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${limit}`)
-			.then(res => {
+		recentTracks = await fetch(
+			`https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${limit}`
+		)
+			.then((res) => {
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
 				return res;
 			})
 			.then((res) => res.json())
-			.catch(error => { throw new Error(error); });
+			.catch((error) => {
+				throw new Error(error);
+			});
 	} catch (error) {
 		return { error: this.msg.fetchError(error) };
 	}
@@ -87,15 +95,19 @@ exports.getRecentTracks = async (user, nickname, limit) => {
 exports.getTopArtists = async (user, nickname, period, limit, page = 1) => {
 	let topArtists;
 	try {
-		topArtists = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${limit}&period=${period}&page=${page}`)
-			.then(res => {
+		topArtists = await fetch(
+			`https://ws.audioscrobbler.com/2.0/?method=user.gettopartists&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${limit}&period=${period}&page=${page}`
+		)
+			.then((res) => {
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
 				return res;
 			})
 			.then((res) => res.json())
-			.catch(error => { throw new Error(error); });
+			.catch((error) => {
+				throw new Error(error);
+			});
 	} catch (error) {
 		return { error: this.msg.fetchError(error) };
 	}
@@ -130,15 +142,19 @@ exports.getTopArtists = async (user, nickname, period, limit, page = 1) => {
 exports.getTopAlbums = async (user, nickname, period, limit) => {
 	let topAlbums;
 	try {
-		topAlbums = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettopalbums&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${limit}&period=${period}`)
-			.then(res => {
+		topAlbums = await fetch(
+			`https://ws.audioscrobbler.com/2.0/?method=user.gettopalbums&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${limit}&period=${period}`
+		)
+			.then((res) => {
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
 				return res;
 			})
 			.then((res) => res.json())
-			.catch(error => { throw new Error(error); });
+			.catch((error) => {
+				throw new Error(error);
+			});
 	} catch (error) {
 		return { error: this.msg.fetchError(error) };
 	}
@@ -173,15 +189,19 @@ exports.getTopAlbums = async (user, nickname, period, limit) => {
 exports.getTopTracks = async (user, nickname, period, limit) => {
 	let topTracks;
 	try {
-		topTracks = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${limit}&period=${period}`)
-			.then(res => {
+		topTracks = await fetch(
+			`https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json&limit=${limit}&period=${period}`
+		)
+			.then((res) => {
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
 				return res;
 			})
 			.then((res) => res.json())
-			.catch(error => { throw new Error(error); });
+			.catch((error) => {
+				throw new Error(error);
+			});
 	} catch (error) {
 		return { error: this.msg.fetchError(error) };
 	}
@@ -216,15 +236,19 @@ exports.getTopTracks = async (user, nickname, period, limit) => {
 exports.getUserInfo = async (user, nickname) => {
 	let userInfo;
 	try {
-		userInfo = await fetch(`https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json`)
-			.then(res => {
+		userInfo = await fetch(
+			`https://ws.audioscrobbler.com/2.0/?method=user.getinfo&user=${nickname}&api_key=${process.env.LASTFM_API_KEY}&format=json`
+		)
+			.then((res) => {
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
 				return res;
 			})
 			.then((res) => res.json())
-			.catch(error => { throw new Error(error); });
+			.catch((error) => {
+				throw new Error(error);
+			});
 	} catch (error) {
 		return { error: this.msg.fetchError(error) };
 	}
@@ -255,7 +279,11 @@ exports.getArtistScrobble = async (user, nickname, artist) => {
 		const len = artists.artist.length;
 		for (let i = 0; i < len; i++) {
 			if (artists.artist[i].name == artist) {
-				return { playcount: Number(artists.artist[i].playcount), nickname: nickname, user: user };
+				return {
+					playcount: Number(artists.artist[i].playcount),
+					nickname: nickname,
+					user: user,
+				};
 			}
 		}
 
@@ -263,7 +291,6 @@ exports.getArtistScrobble = async (user, nickname, artist) => {
 			break;
 		}
 		counter++;
-
 	} while (counter < 10);
 	return { error: `${user} has 0 plays of this artist.` };
 };

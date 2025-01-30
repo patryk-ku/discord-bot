@@ -147,7 +147,9 @@ module.exports = {
 							'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png',
 					});
 
-				if (title?.length > 2) embed.setTitle(title);
+				if (title?.length > 2) {
+					embed.setTitle(title);
+				}
 			} catch (error) {
 				console.error(error);
 				// Fallback embed without fancy features
@@ -190,7 +192,9 @@ module.exports = {
 					}
 				}
 
-				if (json.description) descriptionString += json.description;
+				if (json.description) {
+					descriptionString += json.description;
+				}
 				descriptionString = descriptionString.replace(/#(\w+)/g, ' `#$1` ');
 
 				let shortUrl = url;
@@ -249,7 +253,9 @@ module.exports = {
 				}
 				embed.setFooter(footerObject);
 
-				if (json.timestamp) embed.setTimestamp(json.timestamp * 1000);
+				if (json.timestamp) {
+					embed.setTimestamp(json.timestamp * 1000);
+				}
 			} catch (error) {
 				console.log();
 				console.log(error);
@@ -294,7 +300,7 @@ module.exports = {
 					await fs.promises.access(fragmentPath, fs.constants.F_OK);
 					fragmentsList.push(fragmentPath);
 					console.log(fragmentPath);
-				} catch (error) {
+				} catch (_error) {
 					break;
 				}
 			}
@@ -317,7 +323,9 @@ module.exports = {
 							content: `### Part ${index + 1} of ${fragmentsList.length}`,
 							files: [file],
 						};
-						if (index + 1 == fragmentsList.length) messageObject.embeds = [embed];
+						if (index + 1 == fragmentsList.length) {
+							messageObject.embeds = [embed];
+						}
 						await interaction.followUp(messageObject);
 					}
 					console.log(`File sent succesfully: ${fragment}`);

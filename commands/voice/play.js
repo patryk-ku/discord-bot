@@ -81,7 +81,7 @@ module.exports = {
 				playNextQueue(connection.player, connection.queue);
 			});
 
-			connection.player.on(AudioPlayerStatus.Idle, (oldState, newState) => {
+			connection.player.on(AudioPlayerStatus.Idle, (_oldState, _newState) => {
 				// console.log('Voice idle, old state:');
 				// console.log(oldState);
 				// console.log('new state:');

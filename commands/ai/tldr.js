@@ -88,7 +88,9 @@ module.exports = {
 		async function parseMentions(text) {
 			const idList = text.match(/<@(\d+)>/g);
 
-			if (!idList) return text;
+			if (!idList) {
+				return text;
+			}
 
 			const userNames = [];
 

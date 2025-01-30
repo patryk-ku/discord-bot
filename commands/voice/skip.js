@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { VoiceConnectionStatus, entersState, getVoiceConnection } = require('@discordjs/voice');
+const { getVoiceConnection } = require('@discordjs/voice');
 const { playNextQueue, embedSmall } = require('../../helpers/voice.js');
 
 module.exports = {

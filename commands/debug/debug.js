@@ -158,7 +158,10 @@ module.exports = {
 				add('Last.fm', process.env.LASTFM_API_KEY ? ':white_check_mark:' : ':x:');
 				add('Listenbrainz', process.env.LISTENBRAINZ_TOKEN ? ':white_check_mark:' : ':x:');
 				add('Gemini', process.env.GEMINI_API_KEY ? ':white_check_mark:' : ':x:');
-				add('League of Legends', process.env.RIOTGAMES_TOKEN ? ':white_check_mark:' : ':x:');
+				add(
+					'League of Legends',
+					process.env.RIOTGAMES_TOKEN ? ':white_check_mark:' : ':x:'
+				);
 
 				// Other settings
 				separator('Other settings');

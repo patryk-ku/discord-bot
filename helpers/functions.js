@@ -48,7 +48,7 @@ exports.deleteFile = async (path) => {
 
 	try {
 		await fs.access(path, fs.constants.F_OK);
-	} catch (error) {
+	} catch (_error) {
 		console.log(`File don't exists: ${path}`);
 		return;
 	}

@@ -21,150 +21,189 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('lastfm')
 		.setDescription('Last.fm options.')
-		.addSubcommandGroup(subcommandgroup =>
+		.addSubcommandGroup((subcommandgroup) =>
 			subcommandgroup
 				.setName('nickname')
 				.setDescription('Last.fm nickname options.')
-				.addSubcommand(subcommand =>
+				.addSubcommand((subcommand) =>
 					subcommand
 						.setName('set')
 						.setDescription('Set or update your lastfm nickname.')
-						.addStringOption(option =>
-							option.setName('nickname')
+						.addStringOption((option) =>
+							option
+								.setName('nickname')
 								.setDescription('Your lastfm nickname')
-								.setRequired(true)))
-				.addSubcommand(subcommand =>
+								.setRequired(true)
+						)
+				)
+				.addSubcommand((subcommand) =>
 					subcommand
 						.setName('remove')
-						.setDescription('Delete your lastfm nickname from bot database.'))
-				.addSubcommand(subcommand =>
+						.setDescription('Delete your lastfm nickname from bot database.')
+				)
+				.addSubcommand((subcommand) =>
 					subcommand
 						.setName('lock')
 						.setDescription('Prevent the server admins from changing your nickname.')
-						.addBooleanOption(option =>
-							option.setName('action')
+						.addBooleanOption((option) =>
+							option
+								.setName('action')
 								.setDescription('Lock - true or false.')
-								.setRequired(true))))
-		.addSubcommandGroup(subcommandgroup =>
+								.setRequired(true)
+						)
+				)
+		)
+		.addSubcommandGroup((subcommandgroup) =>
 			subcommandgroup
 				.setName('top')
 				.setDescription('Last.fm user top charts.')
-				.addSubcommand(subcommand =>
+				.addSubcommand((subcommand) =>
 					subcommand
 						.setName('artists')
 						.setDescription('Replies with user top artists chart.')
-						.addStringOption(option =>
-							option.setName('range')
+						.addStringOption((option) =>
+							option
+								.setName('range')
 								.setDescription('Date range.')
 								.setRequired(true)
 								.addChoices(
 									{ name: 'week', value: '7day' },
 									{ name: 'month', value: '1month' },
 									{ name: 'year', value: '12month' },
-									{ name: 'overall', value: 'overall' },
-								))
-						.addIntegerOption(option =>
-							option.setName('amount')
+									{ name: 'overall', value: 'overall' }
+								)
+						)
+						.addIntegerOption((option) =>
+							option
+								.setName('amount')
 								.setDescription('Number of artists (default 10, max 20).')
 								.setMinValue(1)
-								.setMaxValue(20))
-						.addUserOption(option =>
-							option.setName('user')
-								.setDescription('The user (default you).')))
-				.addSubcommand(subcommand =>
+								.setMaxValue(20)
+						)
+						.addUserOption((option) =>
+							option.setName('user').setDescription('The user (default you).')
+						)
+				)
+				.addSubcommand((subcommand) =>
 					subcommand
 						.setName('albums')
 						.setDescription('Replies with user top albums chart.')
-						.addStringOption(option =>
-							option.setName('range')
+						.addStringOption((option) =>
+							option
+								.setName('range')
 								.setDescription('Date range.')
 								.setRequired(true)
 								.addChoices(
 									{ name: 'week', value: '7day' },
 									{ name: 'month', value: '1month' },
 									{ name: 'year', value: '12month' },
-									{ name: 'overall', value: 'overall' },
-								))
-						.addIntegerOption(option =>
-							option.setName('amount')
+									{ name: 'overall', value: 'overall' }
+								)
+						)
+						.addIntegerOption((option) =>
+							option
+								.setName('amount')
 								.setDescription('Number of albums (default 10, max 20).')
 								.setMinValue(1)
-								.setMaxValue(20))
-						.addUserOption(option =>
-							option.setName('user')
-								.setDescription('The user (default you).')))
-				.addSubcommand(subcommand =>
+								.setMaxValue(20)
+						)
+						.addUserOption((option) =>
+							option.setName('user').setDescription('The user (default you).')
+						)
+				)
+				.addSubcommand((subcommand) =>
 					subcommand
 						.setName('tracks')
 						.setDescription('Replies with user top tracks chart.')
-						.addStringOption(option =>
-							option.setName('range')
+						.addStringOption((option) =>
+							option
+								.setName('range')
 								.setDescription('Date range.')
 								.setRequired(true)
 								.addChoices(
 									{ name: 'week', value: '7day' },
 									{ name: 'month', value: '1month' },
 									{ name: 'year', value: '12month' },
-									{ name: 'overall', value: 'overall' },
-								))
-						.addIntegerOption(option =>
-							option.setName('amount')
+									{ name: 'overall', value: 'overall' }
+								)
+						)
+						.addIntegerOption((option) =>
+							option
+								.setName('amount')
 								.setDescription('Number of tracks (default 10, max 20).')
 								.setMinValue(1)
-								.setMaxValue(20))
-						.addUserOption(option =>
-							option.setName('user')
-								.setDescription('The user (default you).'))))
-		.addSubcommandGroup(subcommandgroup =>
+								.setMaxValue(20)
+						)
+						.addUserOption((option) =>
+							option.setName('user').setDescription('The user (default you).')
+						)
+				)
+		)
+		.addSubcommandGroup((subcommandgroup) =>
 			subcommandgroup
 				.setName('server')
 				.setDescription('Last.fm server stats options.')
-				.addSubcommand(subcommand =>
+				.addSubcommand((subcommand) =>
 					subcommand
 						.setName('artist')
-						.setDescription('Check artist playcount for each member of the server (max 20 users)')
-						.addStringOption(option =>
-							option.setName('artist')
-								.setDescription('Artist name (default your now playing/last artist).'))
-						.addUserOption(option =>
-							option.setName('user')
-								.setDescription('The user (default you).'))))
-		.addSubcommand(subcommand =>
+						.setDescription(
+							'Check artist playcount for each member of the server (max 20 users)'
+						)
+						.addStringOption((option) =>
+							option
+								.setName('artist')
+								.setDescription(
+									'Artist name (default your now playing/last artist).'
+								)
+						)
+						.addUserOption((option) =>
+							option.setName('user').setDescription('The user (default you).')
+						)
+				)
+		)
+		.addSubcommand((subcommand) =>
 			subcommand
 				.setName('recent')
 				.setDescription('Replies with user recently scrobbled songs.')
-				.addIntegerOption(option =>
-					option.setName('amount')
+				.addIntegerOption((option) =>
+					option
+						.setName('amount')
 						.setDescription('Number of songs (default 5, max 10).')
 						.setMinValue(1)
-						.setMaxValue(10))
-				.addUserOption(option =>
-					option.setName('user')
-						.setDescription('The user (default you).')))
-		.addSubcommand(subcommand =>
+						.setMaxValue(10)
+				)
+				.addUserOption((option) =>
+					option.setName('user').setDescription('The user (default you).')
+				)
+		)
+		.addSubcommand((subcommand) =>
 			subcommand
 				.setName('collage')
 				.setDescription('Replies with user top albums collage.')
-				.addStringOption(option =>
-					option.setName('range')
+				.addStringOption((option) =>
+					option
+						.setName('range')
 						.setDescription('Date range.')
 						.setRequired(true)
 						.addChoices(
 							{ name: 'week', value: '7day' },
 							{ name: 'month', value: '1month' },
 							{ name: 'year', value: '12month' },
-							{ name: 'overall', value: 'overall' },
-						))
-				.addUserOption(option =>
-					option.setName('user')
-						.setDescription('The user (default you).')))
-		.addSubcommand(subcommand =>
+							{ name: 'overall', value: 'overall' }
+						)
+				)
+				.addUserOption((option) =>
+					option.setName('user').setDescription('The user (default you).')
+				)
+		)
+		.addSubcommand((subcommand) =>
 			subcommand
 				.setName('profile')
 				.setDescription('Replies with user last.fm profile summary.')
-				.addUserOption(option =>
-					option.setName('user')
-						.setDescription('The user (default you).')))
+				.addUserOption((option) =>
+					option.setName('user').setDescription('The user (default you).')
+				)
+		)
 		.setDMPermission(true),
 	async execute(interaction) {
 		if (!process.env.LASTFM_API_KEY) {
@@ -173,13 +212,16 @@ module.exports = {
 
 		switch (interaction.options.getSubcommandGroup()) {
 			case 'nickname': {
-
 				switch (interaction.options.getSubcommand()) {
 					case 'set': {
 						await interaction.deferReply();
-						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						console.log(
+							`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`
+						);
 
-						const nickname = validator.escape(interaction.options.getString('nickname'));
+						const nickname = validator.escape(
+							interaction.options.getString('nickname')
+						);
 						await interaction.editReply(`Setting your nickname to: \`${nickname}\``);
 
 						try {
@@ -188,55 +230,83 @@ module.exports = {
 								lastfm: nickname,
 							});
 
-							return interaction.editReply(`Your lastfm login is set to: \`${row.lastfm}\``);
+							return interaction.editReply(
+								`Your lastfm login is set to: \`${row.lastfm}\``
+							);
 						} catch (error) {
 							if (error.name === 'SequelizeUniqueConstraintError') {
 								interaction.editReply('User exist in database, updating nickname.');
-								const affectedRows = await interaction.client.Users.update({ lastfm: nickname }, { where: { user: interaction.user.id } });
+								const affectedRows = await interaction.client.Users.update(
+									{ lastfm: nickname },
+									{ where: { user: interaction.user.id } }
+								);
 
 								if (affectedRows > 0) {
-									return interaction.editReply(`Your new nickname is \`${nickname}\`.`);
+									return interaction.editReply(
+										`Your new nickname is \`${nickname}\`.`
+									);
 								}
 							}
 
 							console.log(error);
-							return interaction.editReply('Error: Something went wrong with setting a username.');
+							return interaction.editReply(
+								'Error: Something went wrong with setting a username.'
+							);
 						}
 					}
 
 					case 'remove': {
 						await interaction.deferReply();
-						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
-						await interaction.editReply('Deleting your last.fm username from database...');
+						console.log(
+							`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`
+						);
+						await interaction.editReply(
+							'Deleting your last.fm username from database...'
+						);
 
 						// deletes user nickname from database
-						const affectedRows = await interaction.client.Users.update({ lastfm: '' }, { where: { user: interaction.user.id } });
+						const affectedRows = await interaction.client.Users.update(
+							{ lastfm: '' },
+							{ where: { user: interaction.user.id } }
+						);
 
 						if (affectedRows > 0) {
 							return interaction.editReply('User deleted.');
 						}
 
-						return interaction.editReply('That user doesn\'t exist in database.');
-
+						return interaction.editReply("That user doesn't exist in database.");
 					}
 
 					case 'lock': {
 						await interaction.deferReply({ ephemeral: true });
-						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						console.log(
+							`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`
+						);
 						const lock = interaction.options.getBoolean('action');
 
-						const affectedRows = await interaction.client.Users.update({ locked: lock }, { where: { user: interaction.user.id } });
+						const affectedRows = await interaction.client.Users.update(
+							{ locked: lock },
+							{ where: { user: interaction.user.id } }
+						);
 
 						if (affectedRows > 0) {
-							return interaction.editReply({ content: `Your nickname lock status is set to: \`${lock}\`.`, ephemeral: true });
+							return interaction.editReply({
+								content: `Your nickname lock status is set to: \`${lock}\`.`,
+								ephemeral: true,
+							});
 						} else {
-							return interaction.editReply({ content: 'That user doesn\'t exist in database.', ephemeral: true });
+							return interaction.editReply({
+								content: "That user doesn't exist in database.",
+								ephemeral: true,
+							});
 						}
-
 					}
 
 					default: {
-						return interaction.reply({ content: 'Error: Missing subcommand.', ephemeral: true });
+						return interaction.reply({
+							content: 'Error: Missing subcommand.',
+							ephemeral: true,
+						});
 					}
 				}
 			}
@@ -245,14 +315,18 @@ module.exports = {
 				switch (interaction.options.getSubcommand()) {
 					case 'artists': {
 						await interaction.deferReply();
-						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						console.log(
+							`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`
+						);
 
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						const range = interaction.options.getString('range');
 						const amount = interaction.options.getInteger('amount') ?? 10;
 
 						// Get user nickname from bot database
-						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						const userData = await interaction.client.Users.findOne({
+							where: { user: user.id },
+						});
 						if (!userData) {
 							return interaction.editReply(Lastfm.msg.missingUsername(user));
 						}
@@ -262,16 +336,26 @@ module.exports = {
 						const lastfmNickname = userData.get('lastfm');
 
 						// Get top artists
-						const artists = await Lastfm.getTopArtists(user, lastfmNickname, range, amount);
+						const artists = await Lastfm.getTopArtists(
+							user,
+							lastfmNickname,
+							range,
+							amount
+						);
 						if (artists.error) {
 							return interaction.editReply({ content: artists.error });
 						}
 
 						const rangeString = Lastfm.str.range(range);
 						const artistEmbed = new EmbedBuilder()
-							.setColor(0xC3000D)
-							.setAuthor({ name: `${user.username} top artists of the ${rangeString}:`, iconURL: user.avatarURL() })
-							.setFooter({ text: `total ${artists['@attr'].total} artist played (${rangeString})` });
+							.setColor(0xc3000d)
+							.setAuthor({
+								name: `${user.username} top artists of the ${rangeString}:`,
+								iconURL: user.avatarURL(),
+							})
+							.setFooter({
+								text: `total ${artists['@attr'].total} artist played (${rangeString})`,
+							});
 
 						let descriptionString = '';
 						for (const [index, artist] of artists.artist.entries()) {
@@ -284,14 +368,18 @@ module.exports = {
 
 					case 'albums': {
 						await interaction.deferReply();
-						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						console.log(
+							`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`
+						);
 
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						const range = interaction.options.getString('range');
 						const amount = interaction.options.getInteger('amount') ?? 10;
 
 						// Get user nickname from bot database
-						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						const userData = await interaction.client.Users.findOne({
+							where: { user: user.id },
+						});
 						if (!userData) {
 							return interaction.editReply(Lastfm.msg.missingUsername(user));
 						}
@@ -301,16 +389,26 @@ module.exports = {
 						const lastfmNickname = userData.get('lastfm');
 
 						// Get top albums
-						const albums = await Lastfm.getTopAlbums(user, lastfmNickname, range, amount);
+						const albums = await Lastfm.getTopAlbums(
+							user,
+							lastfmNickname,
+							range,
+							amount
+						);
 						if (albums.error) {
 							return interaction.editReply({ content: albums.error });
 						}
 
 						const rangeString = Lastfm.str.range(range);
 						const albumEmbed = new EmbedBuilder()
-							.setColor(0xC3000D)
-							.setAuthor({ name: `${user.username} top albums of the ${rangeString}:`, iconURL: user.avatarURL() })
-							.setFooter({ text: `total ${albums['@attr'].total} albums played (${rangeString})` });
+							.setColor(0xc3000d)
+							.setAuthor({
+								name: `${user.username} top albums of the ${rangeString}:`,
+								iconURL: user.avatarURL(),
+							})
+							.setFooter({
+								text: `total ${albums['@attr'].total} albums played (${rangeString})`,
+							});
 
 						let descriptionString = '';
 						for (const [index, album] of albums.album.entries()) {
@@ -323,14 +421,18 @@ module.exports = {
 
 					case 'tracks': {
 						await interaction.deferReply();
-						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						console.log(
+							`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`
+						);
 
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						const range = interaction.options.getString('range');
 						const amount = interaction.options.getInteger('amount') ?? 10;
 
 						// Get user nickname from bot database
-						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						const userData = await interaction.client.Users.findOne({
+							where: { user: user.id },
+						});
 						if (!userData) {
 							return interaction.editReply(Lastfm.msg.missingUsername(user));
 						}
@@ -340,16 +442,26 @@ module.exports = {
 						const lastfmNickname = userData.get('lastfm');
 
 						// Get top tracks
-						const tracks = await Lastfm.getTopTracks(user, lastfmNickname, range, amount);
+						const tracks = await Lastfm.getTopTracks(
+							user,
+							lastfmNickname,
+							range,
+							amount
+						);
 						if (tracks.error) {
 							return interaction.editReply({ content: tracks.error });
 						}
 
 						const rangeString = Lastfm.str.range(range);
 						const trackEmbed = new EmbedBuilder()
-							.setColor(0xC3000D)
-							.setAuthor({ name: `${user.username} top tracks of the ${rangeString}:`, iconURL: user.avatarURL() })
-							.setFooter({ text: `total ${tracks['@attr'].total} tracks played (${rangeString})` });
+							.setColor(0xc3000d)
+							.setAuthor({
+								name: `${user.username} top tracks of the ${rangeString}:`,
+								iconURL: user.avatarURL(),
+							})
+							.setFooter({
+								text: `total ${tracks['@attr'].total} tracks played (${rangeString})`,
+							});
 
 						let descriptionString = '';
 						for (const [index, track] of tracks.track.entries()) {
@@ -361,7 +473,10 @@ module.exports = {
 					}
 
 					default: {
-						return interaction.reply({ content: 'Error: Missing subcommand.', ephemeral: true });
+						return interaction.reply({
+							content: 'Error: Missing subcommand.',
+							ephemeral: true,
+						});
 					}
 				}
 			}
@@ -370,13 +485,17 @@ module.exports = {
 				switch (interaction.options.getSubcommand()) {
 					case 'artist': {
 						await interaction.deferReply();
-						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						console.log(
+							`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommandGroup()} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`
+						);
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						let artist = interaction.options.getString('artist');
 
 						if (!artist) {
 							// Get user nickname from bot database
-							const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+							const userData = await interaction.client.Users.findOne({
+								where: { user: user.id },
+							});
 							if (!userData) {
 								return interaction.editReply(Lastfm.msg.missingUsername(user));
 							}
@@ -396,19 +515,30 @@ module.exports = {
 
 						// Get all logged server users
 						const members = await interaction.guild.members.fetch();
-						const membersIds = members.map(member => member.user.id);
-						const loggedUsers = await interaction.client.Users.findAll({ where: { user: { [Sequelize.Op.in]: membersIds } } });
+						const membersIds = members.map((member) => member.user.id);
+						const loggedUsers = await interaction.client.Users.findAll({
+							where: { user: { [Sequelize.Op.in]: membersIds } },
+						});
 
-						const artistEmbed = new EmbedBuilder()
-							.setColor(0xC3000D)
-							.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() });
+						const artistEmbed = new EmbedBuilder().setColor(0xc3000d).setAuthor({
+							name: interaction.guild.name,
+							iconURL: interaction.guild.iconURL(),
+						});
 
 						const promises = [];
 						for (let i = 0; i < loggedUsers.length; i++) {
-							const data = Lastfm.getArtistScrobble(await interaction.client.users.fetch(loggedUsers[i].dataValues.user), loggedUsers[i].dataValues.lastfm, artist);
+							const data = Lastfm.getArtistScrobble(
+								await interaction.client.users.fetch(
+									loggedUsers[i].dataValues.user
+								),
+								loggedUsers[i].dataValues.lastfm,
+								artist
+							);
 							promises.push(data);
 							if (i == 24) {
-								artistEmbed.setFooter({ text: 'Displaying only max 25 users. Do not use this command on large servers!' });
+								artistEmbed.setFooter({
+									text: 'Displaying only max 25 users. Do not use this command on large servers!',
+								});
 								break;
 							}
 						}
@@ -426,7 +556,9 @@ module.exports = {
 						}
 
 						if (artistsForEmbed.length == 0) {
-							return interaction.editReply(`Nobody on this server listens to **${artist}**.`);
+							return interaction.editReply(
+								`Nobody on this server listens to **${artist}**.`
+							);
 						}
 
 						artistsForEmbed.sort((a, b) => b.playcount - a.playcount);
@@ -441,7 +573,10 @@ module.exports = {
 					}
 
 					default: {
-						return interaction.reply({ content: 'Error: Missing subcommand.', ephemeral: true });
+						return interaction.reply({
+							content: 'Error: Missing subcommand.',
+							ephemeral: true,
+						});
 					}
 				}
 			}
@@ -450,12 +585,16 @@ module.exports = {
 				switch (interaction.options.getSubcommand()) {
 					case 'collage': {
 						await interaction.deferReply();
-						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						console.log(
+							`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`
+						);
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						const range = interaction.options.getString('range');
 
 						// Get user nickname from bot database
-						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						const userData = await interaction.client.Users.findOne({
+							where: { user: user.id },
+						});
 						if (!userData) {
 							return interaction.editReply(Lastfm.msg.missingUsername(user));
 						}
@@ -472,13 +611,13 @@ module.exports = {
 
 						const rangeString = Lastfm.str.range(range);
 						if (!process.env.TERMUX) {
-
 							// Create canvas image
 							const canvas = Canvas.createCanvas(900, 900);
 							const context = canvas.getContext('2d');
 							let missingCounter = 9;
 
-							let x = 0, y = 0;
+							let x = 0,
+								y = 0;
 							for (const album of albums.album) {
 								if (album.image[3]['#text'].length > 0) {
 									const { body } = await request(album.image[3]['#text']);
@@ -500,8 +639,13 @@ module.exports = {
 								collageString += `\n*Missing covers: ${missingCounter}*`;
 							}
 
-							const attachment = new AttachmentBuilder(await canvas.encode('jpeg'), { name: 'collage.jpeg' });
-							return interaction.editReply({ content: collageString, files: [attachment] });
+							const attachment = new AttachmentBuilder(await canvas.encode('jpeg'), {
+								name: 'collage.jpeg',
+							});
+							return interaction.editReply({
+								content: collageString,
+								files: [attachment],
+							});
 						}
 
 						// Termux fix
@@ -516,7 +660,10 @@ module.exports = {
 								console.log(`Downloading: ${album.image[3]['#text']}`);
 								const fileName = `./tmpfiles/${fileId}-${index}.jpg`;
 								filePaths.push(fileName);
-								const coverArt = helperFunctions.downloadFile(album.image[3]['#text'], fileName);
+								const coverArt = helperFunctions.downloadFile(
+									album.image[3]['#text'],
+									fileName
+								);
 								requests.push(coverArt);
 								missingCounter--;
 							}
@@ -525,14 +672,19 @@ module.exports = {
 						try {
 							await Promise.all(requests);
 							console.log('All files downloaded.');
-						} catch (error) {
+						} catch (_error) {
 							helperFunctions.deleteMultipleFiles(filePaths);
-							return interaction.editReply({ content: 'Failed to download one or more images from Last.fm servers, try again later.' });
+							return interaction.editReply({
+								content:
+									'Failed to download one or more images from Last.fm servers, try again later.',
+							});
 						}
 
 						// Use python script to create collage
 						try {
-							const { error, stdout, stderr } = await execPromise(`python ./helpers/collage.py ${fileId}`);
+							const { error, stdout, stderr } = await execPromise(
+								`python ./helpers/collage.py ${fileId}`
+							);
 							if (error) {
 								console.log(error);
 							}
@@ -549,8 +701,8 @@ module.exports = {
 						// Check if file exists
 						try {
 							await fs.access(`./tmpfiles/${fileId}-collage.jpg`, fs.constants.F_OK);
-						} catch (error) {
-							console.log('Collage file don\'t exists.');
+						} catch (_error) {
+							console.log("Collage file don't exists.");
 							helperFunctions.deleteMultipleFiles(filePaths);
 							return interaction.editReply('Failed to create collage.');
 						}
@@ -567,11 +719,16 @@ module.exports = {
 
 						try {
 							const attachment = new AttachmentBuilder(filePaths.at(-1));
-							await interaction.editReply({ content: collageString, files: [attachment] });
+							await interaction.editReply({
+								content: collageString,
+								files: [attachment],
+							});
 							console.log('File sent.');
 						} catch (error) {
 							console.log(error);
-							await interaction.editReply('Error, failed to upload video to discord servers.');
+							await interaction.editReply(
+								'Error, failed to upload video to discord servers.'
+							);
 						}
 
 						// Deleting tmp files
@@ -581,12 +738,16 @@ module.exports = {
 
 					case 'recent': {
 						await interaction.deferReply();
-						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						console.log(
+							`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`
+						);
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						const amount = interaction.options.getInteger('amount') ?? 5;
 
 						// Get user nickname from bot database
-						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						const userData = await interaction.client.Users.findOne({
+							where: { user: user.id },
+						});
 						if (!userData) {
 							return interaction.editReply(Lastfm.msg.missingUsername(user));
 						}
@@ -596,7 +757,11 @@ module.exports = {
 						const lastfmNickname = userData.get('lastfm');
 
 						// Get recent tracks
-						const recentTracks = await Lastfm.getRecentTracks(user, lastfmNickname, amount);
+						const recentTracks = await Lastfm.getRecentTracks(
+							user,
+							lastfmNickname,
+							amount
+						);
 						if (recentTracks.error) {
 							return interaction.editReply({ content: recentTracks.error });
 						}
@@ -604,7 +769,6 @@ module.exports = {
 						const multiEmbedd = [];
 
 						for (const song of recentTracks.track) {
-
 							if (song['@attr']) {
 								if (song['@attr'].nowplaying) {
 									continue;
@@ -612,29 +776,41 @@ module.exports = {
 							}
 
 							const songEmbed = new EmbedBuilder()
-								.setColor(0xC3000D)
+								.setColor(0xc3000d)
 								.setTimestamp(new Date(song.date.uts * 1000));
 
 							// Check if album cover url exists
 							if (song.image[3]['#text']) {
-								songEmbed.setAuthor({ name: `${song.artist['#text']} - ${song.name}`, iconURL: song.image[3]['#text'] });
+								songEmbed.setAuthor({
+									name: `${song.artist['#text']} - ${song.name}`,
+									iconURL: song.image[3]['#text'],
+								});
 							} else {
-								songEmbed.setAuthor({ name: `${song.artist['#text']} - ${song.name}` });
+								songEmbed.setAuthor({
+									name: `${song.artist['#text']} - ${song.name}`,
+								});
 							}
 
 							multiEmbedd.push(songEmbed);
 						}
 
-						return await interaction.editReply({ content: `## ${user} recent ${amount} songs:`, embeds: [...multiEmbedd] });
+						return await interaction.editReply({
+							content: `## ${user} recent ${amount} songs:`,
+							embeds: [...multiEmbedd],
+						});
 					}
 
 					case 'profile': {
 						await interaction.deferReply();
-						console.log(`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+						console.log(
+							`-> New interaction: "${interaction.commandName} ${interaction.options.getSubcommand()}" by "${interaction.user.username}" on [${new Date().toString()}]`
+						);
 						const user = interaction.options.getUser('user') ?? interaction.user;
 
 						// Get user nickname from bot database
-						const userData = await interaction.client.Users.findOne({ where: { user: user.id } });
+						const userData = await interaction.client.Users.findOne({
+							where: { user: user.id },
+						});
 						if (!userData) {
 							return interaction.editReply(Lastfm.msg.missingUsername(user));
 						}
@@ -650,12 +826,16 @@ module.exports = {
 						}
 
 						const profileEmbed = new EmbedBuilder()
-							.setColor(0xC3000D)
-							.setAuthor({ name: `${user.username} last.fm profile:`, iconURL: user.avatarURL(), url: profile.url })
+							.setColor(0xc3000d)
+							.setAuthor({
+								name: `${user.username} last.fm profile:`,
+								iconURL: user.avatarURL(),
+								url: profile.url,
+							})
 							.setThumbnail(profile.image[3]['#text'])
 							.addFields(
 								{ name: 'Nickname', value: profile.name, inline: true },
-								{ name: 'Scrobbles', value: profile.playcount, inline: true },
+								{ name: 'Scrobbles', value: profile.playcount, inline: true }
 							)
 							.setFooter({ text: 'Scrobbling since' })
 							.setTimestamp(new Date(profile.registered.unixtime * 1000));
@@ -664,7 +844,7 @@ module.exports = {
 							if (profile.country != 'None' && profile.country.length > 0) {
 								profileEmbed.addFields(
 									// { name: '\u200B', value: 'Other:' },
-									{ name: 'Country', value: profile.country },
+									{ name: 'Country', value: profile.country }
 								);
 							}
 						}
@@ -673,14 +853,17 @@ module.exports = {
 							{ name: '\u200B', value: 'Total count:' },
 							{ name: 'Tracks', value: profile.track_count, inline: true },
 							{ name: 'Albums', value: profile.album_count, inline: true },
-							{ name: 'Artists', value: profile.artist_count, inline: true },
+							{ name: 'Artists', value: profile.artist_count, inline: true }
 						);
 
 						return interaction.editReply({ content: '', embeds: [profileEmbed] });
 					}
 
 					default: {
-						return interaction.reply({ content: 'Error: Missing subcommand.', ephemeral: true });
+						return interaction.reply({
+							content: 'Error: Missing subcommand.',
+							ephemeral: true,
+						});
 					}
 				}
 			}

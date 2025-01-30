@@ -7857,7 +7857,7 @@ exports.getChampionNameById = (id) => {
 		},
 	};
 
-	for (const [key, value] of Object.entries(champions.data)) {
+	for (const [_key, value] of Object.entries(champions.data)) {
 		if (value.key == id) {
 			return value.id;
 		}
@@ -8610,7 +8610,7 @@ exports.getSummonersNameById = (id) => {
 		},
 	};
 
-	for (const [key, value] of Object.entries(summoners.data)) {
+	for (const [_key, value] of Object.entries(summoners.data)) {
 		if (value.key == id) {
 			return value.name;
 		}
