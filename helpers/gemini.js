@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-const { HttpsProxyAgent } = require('https-proxy-agent');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 /**

@@ -20,16 +20,13 @@
   "author": "Patryk Kurdziel",
   "license": "MIT",
   "dependencies": {
-    "@discordjs/voice": "^0.17.0",
+    "@discordjs/voice": "^0.18.0",
     "@distube/ytsr": "^2.0.4",
-    "@google/generative-ai": "^0.2.1",
     "@napi-rs/canvas": "^0.1.65",
     "cheerio": "^1.0.0",
     "discord.js": "^14.17.3",
     "dotenv": "^16.4.7",
-    "https-proxy-agent": "^7.0.6",
     "libsodium-wrappers": "^0.7.15",
-    "node-fetch": "^2.7.0",
     "opusscript": "^0.1.1",
     "pm2": "^5.4.3",
     "sequelize": "^6.37.5",
@@ -38,7 +35,7 @@
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
-    "eslint": "^8.57.1",
+    "eslint": "^9.19.0",
     "nodemon": "^3.1.9",
     "prettier": "^3.4.2"
   },

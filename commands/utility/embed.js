@@ -4,7 +4,6 @@ const util = require('util');
 const validator = require('validator');
 const helperFunctions = require('../../helpers/functions');
 const exec = util.promisify(require('child_process').exec);
-const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 const { createWarningEmbed, createErrorEmbed } = require('../../helpers/functions.js');
 

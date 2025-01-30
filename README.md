@@ -17,9 +17,6 @@ The behaviour of the bot can be changed by editing the default prompts in the .e
 
 At this moment, access to the Gemini API is free up to 15 queries per minute and 1500 requests per day but this may change at any time.
 
-> [!IMPORTANT]
-> The Google Gemini API is not available for free in Europe at the moment. But you can bypass this by using a VPN or Proxy. You can make the bot use the proxy only for Gemini API commands by setting the `PROXY_URL` variable in the `.env` file.
-
 | command | description |
 | ----------- | ----------- |
 | `/gemini` | A simple query to the AI assistant (without chat history and any aditional prompt settings). It also supports image input. |
