@@ -65,22 +65,6 @@ module.exports = {
 				.addUserOption((option) =>
 					option.setName('user').setDescription('The user (default you).')
 				)
-				.addStringOption((option) =>
-					option
-						.setName('nickname')
-						.setDescription('User League of Legends nickname with tag (Nickname#TAG)')
-				)
-				.addStringOption((option) =>
-					option
-						.setName('region')
-						.setDescription('User League of Legends region.')
-						.addChoices(
-							{ name: 'EUNE', value: 'eun1' },
-							{ name: 'EUW', value: 'euw1' },
-							{ name: 'KR', value: 'kr' },
-							{ name: 'NA1', value: 'na1' }
-						)
-				)
 				.addIntegerOption((option) =>
 					option
 						.setName('amount')
@@ -128,7 +112,7 @@ module.exports = {
 							});
 
 							return interaction.editReply(
-								`Your League of Legends name is set to: \`${row.listenbrainz}\``
+								`Your League of Legends name is set to: \`${row.riot_name}\``
 							);
 						} catch (error) {
 							if (error.name === 'SequelizeUniqueConstraintError') {
@@ -253,38 +237,21 @@ module.exports = {
 						);
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						const amount = interaction.options.getInteger('amount') ?? 5;
-						let nickname = interaction.options.getString('nickname');
-						let region = interaction.options.getString('region');
 
-						let puuid = '';
-
-						// Get puuid from db or nickname
-						if (nickname) {
-							if (!region) {
-								return interaction.editReply('ERROR: WIP - missing region');
-							}
-
-							// Obtain PUUID from nickname with tag
-							puuid = await Lol.getUserPuuid(nickname, region);
-							if (puuid.error) {
-								return interaction.editReply({ content: puuid.error });
-							}
-						} else {
-							// Get user nickname from bot database
-							const userData = await interaction.client.Users.findOne({
-								where: { user: user.id },
-							});
-							if (!userData) {
-								return interaction.editReply('ERROR: WIP - not in db');
-							}
-							if (!userData?.get('riot_puuid')) {
-								return interaction.editReply('ERROR: WIP - not in db');
-							}
-							// TODO: check if puuid is empty, in other commands also
-							puuid = userData.get('riot_puuid');
-							region = userData.get('riot_region');
-							nickname = userData.get('riot_name');
+						// Get puuid from db
+						const userData = await interaction.client.Users.findOne({
+							where: { user: user.id },
+						});
+						if (!userData) {
+							return interaction.editReply('ERROR: WIP - not in db');
 						}
+						if (!userData?.get('riot_puuid')) {
+							return interaction.editReply('ERROR: WIP - not in db');
+						}
+						// TODO: check if puuid is empty, in other commands also
+						const puuid = userData.get('riot_puuid');
+						const region = userData.get('riot_region');
+						const nickname = userData.get('riot_name');
 
 						// Get last games id
 						const matchHistory = await Lol.getMatchHistory(puuid, region, amount);
@@ -324,7 +291,7 @@ module.exports = {
 									`
 ### ${Lol.getQueueNameById(match.info.queueId)} - ${playerInfo.win === true ? 'VICTORY' : 'DEFEAT'} (${secondsToHoursMinutes(match.info.gameDuration)})
 ${positionName}**${playerInfo.championName}** ┃ ${playerInfo.kills} / ${playerInfo.deaths} / ${playerInfo.assists} ┃ ${playerInfo.totalMinionsKilled + playerInfo.neutralMinionsKilled} cs
-- link:  [leagueofgraphs.com](https://www.leagueofgraphs.com/match/${Lol.regionCodeToName(region)}/${match.info.gameId})
+[leagueofgraphs.com](https://www.leagueofgraphs.com/match/${Lol.regionCodeToName(region)}/${match.info.gameId})
 `
 								)
 								.setThumbnail(Lol.getChampionAvatar(playerInfo.championName));

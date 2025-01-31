@@ -90,6 +90,7 @@ They require administrator privileges on the server
 | `/admin lastfm set` | Set or update last.fm nickname of given user. |
 | `/admin lastfm remove` | Delete lastfm nickname of given user from bot database. |
 | `/admin lastfm users` | List all last.fm users from this server. |
+| `/admin lol set` | Set or update League of Legends nickname of given user. |
 
 ### Configuration commands
 
@@ -134,7 +135,7 @@ These commands can only be used by the owner of an instance of this bot
 
 		- Bot
 		- applications.commands
-		
+
 	- Bot permissions:
 
 		- Read Messages/View Channels
@@ -163,7 +164,7 @@ These commands can only be used by the owner of an instance of this bot
 	```
 
 6. If you want the bot commands to work on only one server:
-	
+
 	- Uncomment `DISCORD_GUILD_ID` in `.env` and insert your server id here
 
 	and run
@@ -177,7 +178,7 @@ These commands can only be used by the owner of an instance of this bot
 	run
 
 	```sh
-	npm run deploy-global-commands 
+	npm run deploy-global-commands
 	```
 
 7. Finally to start the bot
