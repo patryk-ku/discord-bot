@@ -120,7 +120,6 @@ module.exports = {
 			case 'restart': {
 				await interaction.reply('Restarting...');
 				process.exit();
-				return;
 			}
 
 			case 'update': {
@@ -162,7 +161,7 @@ module.exports = {
 				// TODO: fix also for 'local' commands
 				// Then refresh commands (works only with global commands)
 				try {
-					({ stdout, stderr } = await exec('npm run deploy-global-commands'));
+					({ stdout, stderr } = await exec('pnpm run deploy-global-commands'));
 				} catch (error) {
 					embed.setDescription(
 						`${output}\n### Refresh commands error:\n \`\`\`${error}\`\`\``
@@ -178,7 +177,7 @@ module.exports = {
 				}
 
 				embed.setDescription(
-					`${output}\n### \`npm run deploy-global-commands\` output:\n \`\`\`${stdout}\`\`\` \n### Update completed.\nAfter a successful update, manually run the </config restart:1186353226811969728> command.`
+					`${output}\n### \`pnpm run deploy-global-commands\` output:\n \`\`\`${stdout}\`\`\` \n### Update completed.\nAfter a successful update, manually run the </config restart:1186353226811969728> command.`
 				);
 				await interaction.editReply({ embeds: [embed] });
 
