@@ -65,7 +65,7 @@ module.exports = {
 		console.log(`ID: ${name}`);
 
 		// in mb:
-		const discordUploadLimit = 8;
+		const discordUploadLimit = 10;
 		const maxFragments = 9;
 		const maxFileSize = `${discordUploadLimit * maxFragments}M`;
 
@@ -266,11 +266,12 @@ module.exports = {
 		}
 
 		// Spliting video into parts in needed:
+		console.log('File size: ', fileSize);
 		if (fileSize > discordUploadLimit) {
 			console.log('Spliting video into parts.');
 			try {
 				const { error, stdout, stderr } = await exec(
-					`MP4Box -splits ${discordUploadLimit * 1000} ${filePath}`
+					`helpers/split-video.sh ${filePath} ${discordUploadLimit * 1000000} "-c copy -hide_banner -loglevel error"`
 				);
 				if (error) {
 					console.log(error);
@@ -294,7 +295,7 @@ module.exports = {
 			console.log('Video fragments:');
 			const fragmentsList = [];
 			for (let i = 1; i < maxFragments + 1; i++) {
-				const fragmentPath = `./tmpfiles/${name}_00${i}.mp4`;
+				const fragmentPath = `./tmpfiles/${name}-${i}.mp4`;
 				// Check if file exists
 				try {
 					await fs.promises.access(fragmentPath, fs.constants.F_OK);
