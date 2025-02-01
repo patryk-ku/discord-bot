@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 require('dotenv').config();
-const { exec } = require('child_process');
 const util = require('util');
-const execPromise = util.promisify(exec);
+const exec = util.promisify(require('child_process').exec);
+const { splitTextWithWordWrap } = require('../../helpers/functions.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -28,6 +28,11 @@ module.exports = {
 				.setName('settings')
 				.setDescription('Debug info about bot enabled APIs and settings.')
 		)
+
+		.addSubcommand((subcommand) =>
+			subcommand.setName('log').setDescription('Show last 100 lines of logs.')
+		)
+
 		.setDefaultMemberPermissions(0)
 		.setDMPermission(false),
 	async execute(interaction) {
@@ -68,7 +73,7 @@ module.exports = {
 				let isFail = true;
 				let battery = '';
 				try {
-					const { error, stdout, stderr } = await execPromise('termux-battery-status');
+					const { error, stdout, stderr } = await exec('termux-battery-status');
 					if (error) {
 						console.log(error);
 					}
@@ -87,7 +92,7 @@ module.exports = {
 				}
 
 				try {
-					const { error, stdout, stderr } = await execPromise('uptime -p');
+					const { error, stdout, stderr } = await exec('uptime -p');
 					if (error) {
 						console.log(error);
 					}
@@ -102,7 +107,7 @@ module.exports = {
 				}
 
 				try {
-					const { error, stdout, stderr } = await execPromise(
+					const { error, stdout, stderr } = await exec(
 						'free -m --si | awk \'FNR == 2 {print $3" MB / "$2" MB"}\''
 					);
 					if (error) {
@@ -179,6 +184,30 @@ module.exports = {
 				const embed = new EmbedBuilder().setDescription(embedString);
 
 				return await interaction.editReply({ content: '', embeds: [embed] });
+			}
+
+			case 'log': {
+				await interaction.deferReply();
+
+				let stdout, stderr;
+				try {
+					({ stdout, stderr } = await exec('tail -n 100 bot.log'));
+				} catch (error) {
+					return await interaction.editReply({
+						content: `### Error:\n \`\`\`${error}\`\`\``,
+					});
+				}
+
+				const text = `${stdout + stderr}`;
+				await interaction.editReply({ content: '## Last 100 lines of logs:' });
+
+				const responseParts = splitTextWithWordWrap(text, 1950);
+
+				for (const part of responseParts) {
+					await interaction.followUp({ content: `\`\`\`${part}\`\`\`` });
+				}
+
+				return;
 			}
 
 			default: {
