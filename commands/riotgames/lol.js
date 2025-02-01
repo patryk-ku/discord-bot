@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const validator = require('validator');
-const querystring = require('node:querystring');
 const Sequelize = require('sequelize');
 require('dotenv').config();
 const Lol = require('../../helpers/lol');
@@ -187,6 +186,7 @@ module.exports = {
 							return interaction.editReply('ERROR: WIP - not in db');
 						}
 						// TODO: check if puuid is empty, in other commands also
+						const discordUserId = userData.get('user');
 						const puuid = userData.get('riot_puuid');
 						const region = userData.get('riot_region');
 						const nickname = userData.get('riot_name');
@@ -197,35 +197,15 @@ module.exports = {
 							return interaction.editReply({ content: match.error });
 						}
 
-						// Find correct player
-						const playerInfo = match.participants.filter(
-							(player) => player.puuid == puuid
-						)[0];
+						const parsedMatch = Lol.parseNowPlayingMatch(match, puuid);
 
-						let gameTime = 'loading screen';
-						if (match.gameLength > 0) {
-							gameTime = secondsToHoursMinutes(match.gameLength);
-						}
-
-						const championName = Lol.getChampionNameById(playerInfo.championId);
-						const summonerSpell1 = Lol.getSummonersNameById(playerInfo.spell1Id);
-						const summonerSpell2 = Lol.getSummonersNameById(playerInfo.spell2Id);
-
-						const gameEmbed = new EmbedBuilder()
-							.setColor(0x0ba2ca)
-							.setAuthor({
-								name: playerInfo.riotId,
-								iconURL: Lol.getProfileIcon(playerInfo.profileIconId),
-								url: `https://www.leagueofgraphs.com/summoner/${Lol.regionCodeToName(region)}/${querystring.escape(nickname.replace('#', '-'))}`,
-							})
-							.setDescription(
-								`
-### Now playing: ${Lol.getQueueNameById(match.gameQueueConfigId)} (${gameTime})
-**${championName}** ┃ summs:  ${summonerSpell1} | ${summonerSpell2}
-- links:  [porofessor.gg](https://porofessor.gg/live/${Lol.regionCodeToName(region)}/${querystring.escape(nickname.replace('#', '-'))}) | [leagueofgraphs.com](https://www.leagueofgraphs.com/match/${Lol.regionCodeToName(region)}/${match.gameId})
-`
-							)
-							.setThumbnail(Lol.getChampionAvatar(championName));
+						const gameEmbed = Lol.nowPlayingEmbed(
+							match,
+							parsedMatch,
+							region,
+							nickname,
+							discordUserId
+						);
 
 						return interaction.editReply({ embeds: [gameEmbed] });
 					}
@@ -336,34 +316,47 @@ ${positionName}**${playerInfo.championName}** ┃ ${playerInfo.kills} / ${player
 							);
 						}
 
-						const requests = [];
-						const requestUsersId = [];
+						const embeds = [];
 						for (let i = 0; i < guild.length; i++) {
-							const puuid = guild[i].dataValues.lol_puuid;
-							const region = guild[i].dataValues.lol_region;
+							const discordUserId = guild[i].dataValues.user;
+							const puuid = guild[i].dataValues.riot_puuid;
+							const region = guild[i].dataValues.riot_region;
+							const nickname = guild[i].dataValues.riot_name;
+
+							if (!puuid) {
+								continue;
+							}
 
 							// Fetch match data
 							const match = await Lol.getNowPlayingMatch(puuid, region);
 							if (match.error) {
 								continue;
 							}
+							const parsedMatch = Lol.parseNowPlayingMatch(match, puuid);
+							const gameEmbed = Lol.nowPlayingEmbed(
+								match,
+								parsedMatch,
+								region,
+								nickname,
+								discordUserId
+							);
+							embeds.push(gameEmbed);
 
-							requestUsersId.push(guild[i].dataValues.user);
-							requests.push(match);
-
-							if (i == 24) {
+							if (i == 9) {
 								break;
 							}
 						}
 
-						// const users = await Promise.all(requests).catch((error) => {
-						// 	console.error(error);
-						// 	return interaction.editReply('Error - WIP');
-						// });
+						if (embeds.length == 0) {
+							return await interaction.editReply(
+								'No one on this server is playing right now.'
+							);
+						}
 
-						// WIP
-
-						return;
+						return interaction.editReply({
+							content: `## Currently Playing Users:`,
+							embeds: [...embeds],
+						});
 					}
 
 					default: {

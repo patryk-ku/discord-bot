@@ -1,4 +1,6 @@
 const querystring = require('node:querystring');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { secondsToHoursMinutes } = require('./functions');
 const Ddragon = require('./lol_ddragon');
 
 exports.getRouteByRegion = (region) => {
@@ -726,4 +728,53 @@ exports.getNowPlayingMatch = async (puuid, region) => {
 	}
 
 	return liveMatch;
+};
+
+exports.parseNowPlayingMatch = (match, puuid) => {
+	// Find correct player
+	const playerInfo = match.participants.filter((player) => player.puuid == puuid)[0];
+	const data = {};
+
+	data.gameTime = 'loading screen';
+	if (match.gameLength > 0) {
+		data.gameTime = secondsToHoursMinutes(match.gameLength);
+	}
+
+	data.champion = this.getChampionNameById(playerInfo.championId);
+	data.spell1 = this.getSummonersNameById(playerInfo.spell1Id);
+	data.spell2 = this.getSummonersNameById(playerInfo.spell2Id);
+
+	data.icon = this.getProfileIcon(playerInfo.profileIconId);
+	data.name = playerInfo.riotId;
+
+	return data;
+};
+
+exports.nowPlayingEmbed = (match, parsedMatch, region, nickname, discordUserId) => {
+	return new EmbedBuilder()
+		.setColor(0x0ba2ca)
+		.setAuthor({
+			name: parsedMatch.name,
+			iconURL: parsedMatch.icon,
+			url: this.leagueofgraphsProfileLink(region, nickname),
+		})
+		.setDescription(
+			`
+<@${discordUserId}> - **${this.getQueueNameById(match.gameQueueConfigId)}** (${parsedMatch.gameTime})
+**${parsedMatch.champion}** (${parsedMatch.spell1}, ${parsedMatch.spell2}) **|** [porofessor](${this.porofessorLiveLink(region, nickname)}) **|**  [match link](${this.leagueofgraphsMatchLink(region, match.gameId)})
+`
+		)
+		.setThumbnail(this.getChampionAvatar(parsedMatch.champion));
+};
+
+exports.leagueofgraphsProfileLink = (region, nickname) => {
+	return `https://www.leagueofgraphs.com/summoner/${this.regionCodeToName(region)}/${querystring.escape(nickname.replace('#', '-'))}`;
+};
+
+exports.leagueofgraphsMatchLink = (region, gameId) => {
+	return `https://www.leagueofgraphs.com/match/${this.regionCodeToName(region)}/${gameId}`;
+};
+
+exports.porofessorLiveLink = (region, nickname) => {
+	return `https://porofessor.gg/live/${this.regionCodeToName(region)}/${querystring.escape(nickname.replace('#', '-'))}`;
 };
