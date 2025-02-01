@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { generateDependencyReport } = require('@discordjs/voice');
 require('dotenv').config();
 const { exec } = require('child_process');
 const util = require('util');
@@ -22,10 +21,6 @@ module.exports = {
 			subcommand
 				.setName('termux')
 				.setDescription('Debug info about the Termux instance (if in use).')
-		)
-
-		.addSubcommand((subcommand) =>
-			subcommand.setName('voice').setDescription('Debug info about the voice internals.')
 		)
 
 		.addSubcommand((subcommand) =>
@@ -130,18 +125,6 @@ module.exports = {
 				return interaction.editReply({ content: '', embeds: [embed] });
 			}
 
-			case 'voice': {
-				await interaction.deferReply();
-				const report = generateDependencyReport();
-				console.log(report);
-
-				const embed = new EmbedBuilder()
-					.setTitle('Voice internals debug info:')
-					.setDescription('```' + report + '```');
-
-				return interaction.editReply({ content: '', embeds: [embed] });
-			}
-
 			case 'settings': {
 				await interaction.deferReply();
 				const settings = [];
@@ -165,7 +148,6 @@ module.exports = {
 
 				// Other settings
 				separator('Other settings');
-				add('Voice commands', process.env.VOICE_COMMANDS ? ':white_check_mark:' : ':x:');
 				add(
 					'Global slash commands',
 					process.env.DISCORD_GUILD_ID ? ':x:' : ':white_check_mark:'

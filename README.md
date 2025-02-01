@@ -70,17 +70,6 @@ At this moment, access to the Gemini API is free up to 15 queries per minute and
 | `/embed` | Embeds video from given url (insta/reddit/twitter etc). |
 | `/avatar` | Embeds avatar image of given user. |
 
-### Voice
-
-| command | description |
-| ----------- | ----------- |
-| `/join` | Request bot to join a voice channel. |
-| `/play` | Play music from a given link in a voice channel, or add to the queue if the bot is already playing music. |
-| `/skip` | Skip to the next song in queue. |
-| `/pause` | Pause playback in voice channel. |
-| `/resume` | Resume playback in voice channel. |
-| `/leave` | Request bot to leave a voice channel. |
-
 ### Administrator commands
 
 They require administrator privileges on the server
@@ -144,9 +133,6 @@ These commands can only be used by the owner of an instance of this bot
 		- Attach Files
 		- Mention Everyone
 		- Use Slash Commands
-		- Connect
-		- Speak
-		- Use Voice Activity
 
 3. For last.fm features you need to obtain their API key [here](https://www.last.fm/api/account/create). For Listenbrainz features you need your profile token from [here](https://listenbrainz.org/profile/).
 4. Clone repository and rename `.env.example` to `.env`
