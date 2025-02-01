@@ -4,7 +4,6 @@ const util = require('util');
 const validator = require('validator');
 const helperFunctions = require('../../helpers/functions');
 const exec = util.promisify(require('child_process').exec);
-const cheerio = require('cheerio');
 const { createWarningEmbed, createErrorEmbed } = require('../../helpers/functions.js');
 
 module.exports = {
@@ -102,167 +101,111 @@ module.exports = {
 		let fileSize = await fs.promises.stat(filePath);
 		fileSize = fileSize.size / (1024 * 1024);
 
-		// Instagram rich embed (WIP)
-		const instaRegex = /^(https?:\/\/)?(www\.)?instagram\.com(\/.*)?$/i;
 		let embed;
-		if (instaRegex.test(url)) {
-			try {
-				const response = await fetch(url);
-				const html = await response.text();
-				const $ = cheerio.load(html);
+		try {
+			const { stdout } = await exec(`yt-dlp --dump-json "${url}"`);
+			const json = JSON.parse(stdout);
+			// console.log('title: ', json.title);
+			// console.log('author: ', json.uploader);
+			// console.log('site: ', json.webpage_url_domain);
+			// console.log('description: ', json.description);
+			// console.log('tags: ', json.tags);
+			// console.log('timestamp: ', json.timestamp);
+			// console.log('given url: ', url);
+			// console.log('short url: ', json.webpage_url);
 
-				const metaTag = $('meta[property="og:description"]').attr('content');
-				const data = metaTag.split('\n')[0];
-				const header = data.split('\n')[0];
+			embed = new EmbedBuilder();
+			let descriptionString = '';
 
-				let title = header.split(':')[1]?.trim();
-				if (title?.at(-1) === '.') {
-					title = title.slice(0, -1);
-				}
-				if (title?.at(0) === '"') {
-					title = title.slice(1);
-				}
-				if (title?.at(-1) === '"') {
-					title = title.slice(0, -1);
-				}
-
-				const description = header.split(':')[0];
-				const author = description.split('-')[1];
-				const stats = description.split('-')[0];
-
-				let hashtags = metaTag.match(/#[a-zA-Z0-9_]+/g);
-				let hastagString = '';
-				if (hashtags?.length > 0) {
-					hashtags = hashtags.map((hashtag) => `\`${hashtag}\``);
-					hastagString = hashtags.join(' ');
-					hastagString += '\n';
-				}
-
-				embed = new EmbedBuilder()
-					.setColor('#DD297A')
-					.setDescription(`${stats}\n${hastagString}\`\`\`${url}\`\`\``)
-					.setFooter({
-						text: `Instagram ┃ ${author}`,
-						iconURL:
-							'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png',
-					});
-
-				if (title?.length > 2) {
-					embed.setTitle(title);
-				}
-			} catch (error) {
-				console.error(error);
-				// Fallback embed without fancy features
-				embed = new EmbedBuilder()
-					.setColor('#DD297A')
-					.setDescription(`\`\`\`${url}\`\`\``)
-					.setFooter({
-						text: 'Instagram',
-						iconURL:
-							'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png',
-					});
-			}
-		} else {
-			// Universal embed for all sites
-			try {
-				const { stdout } = await exec(`yt-dlp --dump-json "${url}"`);
-				const json = JSON.parse(stdout);
-				// console.log('title: ', json.title);
-				// console.log('author: ', json.uploader);
-				// console.log('site: ', json.webpage_url_domain);
-				// console.log('description: ', json.description);
-				// console.log('tags: ', json.tags);
-				// console.log('timestamp: ', json.timestamp);
-				// console.log('given url: ', url);
-				// console.log('short url: ', json.webpage_url);
-
-				embed = new EmbedBuilder();
-				let descriptionString = '';
-
-				if (json.title) {
-					if (
-						json.title !== json?.description &&
-						json?.webpage_url_domain !== 'twitter.com'
-					) {
-						if (json.title.length > 256) {
-							embed.setTitle(json.title.slice(0, 253) + '...');
-						} else {
-							embed.setTitle(json.title);
-						}
+			if (json.title) {
+				if (
+					json.title !== json?.description &&
+					json?.webpage_url_domain !== 'twitter.com'
+				) {
+					if (json.title.length > 256) {
+						embed.setTitle(json.title.slice(0, 253) + '...');
+					} else {
+						embed.setTitle(json.title);
 					}
 				}
-
-				if (json.description) {
-					descriptionString += json.description;
-				}
-				descriptionString = descriptionString.replace(/#(\w+)/g, ' `#$1` ');
-
-				let shortUrl = url;
-				if (json.webpage_url) {
-					shortUrl = json.webpage_url;
-				}
-				descriptionString += `\n\`\`\`${shortUrl}\`\`\``;
-
-				embed.setDescription(descriptionString);
-
-				// footer
-				let footerString = '';
-				if (json.webpage_url_domain) {
-					let webpage = json.webpage_url_domain;
-					// Delete .com .net from end of site name and m. from the beginning
-					webpage = webpage.replace(/\.com$|\.net$/i, '');
-					webpage = webpage.replace(/^m\./, '');
-					webpage = webpage.charAt(0).toUpperCase() + webpage.slice(1);
-					footerString += webpage;
-				}
-				const footerObject = { text: footerString };
-				switch (footerString) {
-					case 'X':
-					case 'Twitter':
-						footerObject.text = 'Twitter';
-						footerObject.iconURL =
-							'https://upload.wikimedia.org/wikipedia/commons/f/f2/Logo_Twitter.png';
-						embed.setColor('#169CF0');
-						break;
-
-					case 'Tiktok':
-						footerObject.text = 'TikTok';
-						footerObject.iconURL = 'https://i.imgur.com/AaYLyBC.png';
-						embed.setColor('#00F2EA');
-						break;
-
-					case 'Reddit':
-						footerObject.iconURL = 'https://i.imgur.com/fD625kA.png';
-						embed.setColor('#FF4300');
-						break;
-
-					case 'Facebook':
-						footerObject.iconURL =
-							'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/2023_Facebook_icon.svg/240px-2023_Facebook_icon.svg.png';
-						embed.setColor('#0065FF');
-						break;
-
-					default:
-						break;
-				}
-				if (json.uploader && json?.uploader?.length < 50) {
-					if (footerObject.text.length > 0) {
-						footerObject.text += ' ┃ by: ';
-					}
-					footerObject.text += json.uploader.replace(/\r?\n|\r/g, ' ');
-				}
-				embed.setFooter(footerObject);
-
-				if (json.timestamp) {
-					embed.setTimestamp(json.timestamp * 1000);
-				}
-			} catch (error) {
-				console.log();
-				console.log(error);
-				embed = new EmbedBuilder()
-					.setDescription(`\`\`\`${url}\`\`\``)
-					.setFooter({ text: 'Requested video' });
 			}
+
+			if (json.description) {
+				descriptionString += json.description;
+			}
+			descriptionString = descriptionString.replace(/#(\w+)/g, ' `#$1` ');
+
+			let shortUrl = url;
+			if (json.webpage_url) {
+				shortUrl = json.webpage_url;
+			}
+			descriptionString += `\n\`\`\`${shortUrl}\`\`\``;
+
+			embed.setDescription(descriptionString);
+
+			// footer
+			let footerString = '';
+			if (json.webpage_url_domain) {
+				let webpage = json.webpage_url_domain;
+				// Delete .com .net from end of site name and m. from the beginning
+				webpage = webpage.replace(/\.com$|\.net$/i, '');
+				webpage = webpage.replace(/^m\./, '');
+				webpage = webpage.charAt(0).toUpperCase() + webpage.slice(1);
+				footerString += webpage;
+			}
+			const footerObject = { text: footerString };
+			switch (footerString) {
+				case 'X':
+				case 'Twitter':
+					footerObject.text = 'Twitter';
+					footerObject.iconURL =
+						'https://upload.wikimedia.org/wikipedia/commons/f/f2/Logo_Twitter.png';
+					embed.setColor('#169CF0');
+					break;
+
+				case 'Tiktok':
+					footerObject.text = 'TikTok';
+					footerObject.iconURL = 'https://i.imgur.com/AaYLyBC.png';
+					embed.setColor('#00F2EA');
+					break;
+
+				case 'Reddit':
+					footerObject.iconURL = 'https://i.imgur.com/fD625kA.png';
+					embed.setColor('#FF4300');
+					break;
+
+				case 'Facebook':
+					footerObject.iconURL =
+						'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/2023_Facebook_icon.svg/240px-2023_Facebook_icon.svg.png';
+					embed.setColor('#0065FF');
+					break;
+
+				case 'Instagram':
+					footerObject.iconURL =
+						'https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png';
+					embed.setColor('#DD297A');
+					break;
+
+				default:
+					break;
+			}
+			if (json.uploader && json?.uploader?.length < 50) {
+				if (footerObject.text.length > 0) {
+					footerObject.text += ' ┃ by: ';
+				}
+				footerObject.text += json.uploader.replace(/\r?\n|\r/g, ' ');
+			}
+			embed.setFooter(footerObject);
+
+			if (json.timestamp) {
+				embed.setTimestamp(json.timestamp * 1000);
+			}
+		} catch (error) {
+			console.log();
+			console.log(error);
+			embed = new EmbedBuilder()
+				.setDescription(`\`\`\`${url}\`\`\``)
+				.setFooter({ text: 'Requested video' });
 		}
 
 		// Spliting video into parts in needed:

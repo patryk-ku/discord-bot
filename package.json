@@ -22,7 +22,6 @@
 	"dependencies": {
 		"@distube/ytsr": "^2.0.4",
 		"@napi-rs/canvas": "^0.1.65",
-		"cheerio": "^1.0.0",
 		"discord.js": "^14.17.3",
 		"dotenv": "^16.4.7",
 		"pm2": "^5.4.3",
