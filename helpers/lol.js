@@ -1,5 +1,5 @@
 const querystring = require('node:querystring');
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const { secondsToHoursMinutes } = require('./functions');
 const Ddragon = require('./lol_ddragon');
 
@@ -373,16 +373,34 @@ exports.getQueueNameById = (id) => {
 			queueId: 830,
 			map: "Summoner's Rift",
 			description: 'Co-op vs. AI Intro Bot games',
-			notes: null,
+			notes: 'Deprecated in March 2024 in favor of queueId 870',
 		},
 		{
 			queueId: 840,
 			map: "Summoner's Rift",
 			description: 'Co-op vs. AI Beginner Bot games',
-			notes: null,
+			notes: 'Deprecated in March 2024 in favor of queueId 880',
 		},
 		{
 			queueId: 850,
+			map: "Summoner's Rift",
+			description: 'Co-op vs. AI Intermediate Bot games',
+			notes: 'Deprecated in March 2024 in favor of queueId 890',
+		},
+		{
+			queueId: 870,
+			map: "Summoner's Rift",
+			description: 'Co-op vs. AI Intro Bot games',
+			notes: null,
+		},
+		{
+			queueId: 880,
+			map: "Summoner's Rift",
+			description: 'Co-op vs. AI Beginner Bot games',
+			notes: null,
+		},
+		{
+			queueId: 890,
 			map: "Summoner's Rift",
 			description: 'Co-op vs. AI Intermediate Bot games',
 			notes: null,
@@ -514,6 +532,12 @@ exports.getQueueNameById = (id) => {
 			notes: 'Deprecated in patch 9.2',
 		},
 		{
+			queueId: 1210,
+			map: 'Convergence',
+			description: "Teamfight Tactics Choncc's Treasure Mode",
+			notes: 'null',
+		},
+		{
 			queueId: 1300,
 			map: 'Nexus Blitz',
 			description: 'Nexus Blitz games',
@@ -530,6 +554,36 @@ exports.getQueueNameById = (id) => {
 			map: 'Rings of Wrath',
 			description: 'Arena',
 			notes: null,
+		},
+		{
+			queueId: 1710,
+			map: 'Rings of Wrath',
+			description: 'Arena',
+			notes: '16 player lobby',
+		},
+		{
+			queueId: 1810,
+			map: 'Swarm',
+			description: 'Swarm Mode Games',
+			notes: 'Swarm Mode 1 player',
+		},
+		{
+			queueId: 1820,
+			map: 'Swarm Mode Games',
+			description: 'Swarm',
+			notes: 'Swarm Mode 2 players',
+		},
+		{
+			queueId: 1830,
+			map: 'Swarm Mode Games',
+			description: 'Swarm',
+			notes: 'Swarm Mode 3 players',
+		},
+		{
+			queueId: 1840,
+			map: 'Swarm Mode Games',
+			description: 'Swarm',
+			notes: 'Swarm Mode 4 players',
 		},
 		{
 			queueId: 1900,
@@ -572,7 +626,7 @@ exports.getQueueNameById = (id) => {
 	return name;
 };
 
-exports.ddragonVer = '14.8.1';
+exports.ddragonVer = '15.2.1';
 
 exports.getChampionAvatar = (name) => {
 	return `https://ddragon.leagueoflegends.com/cdn/${this.ddragonVer}/img/champion/${name}.png`;
