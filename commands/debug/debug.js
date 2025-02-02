@@ -1,8 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 require('dotenv').config();
 const util = require('util');
-const exec = util.promisify(require('child_process').exec);
-const { splitTextWithWordWrap } = require('../../helpers/functions.js');
+const execPromise = util.promisify(require('child_process').exec);
+const { exec, createErrorEmbed } = require('../../helpers/functions.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -30,7 +30,16 @@ module.exports = {
 		)
 
 		.addSubcommand((subcommand) =>
-			subcommand.setName('log').setDescription('Show last 100 lines of logs.')
+			subcommand
+				.setName('log')
+				.setDescription('Show last x lines of logs.')
+				.addIntegerOption((option) =>
+					option
+						.setName('lines')
+						.setDescription('Number of lines (default 200, max 1000).')
+						.setMinValue(50)
+						.setMaxValue(1000)
+				)
 		)
 
 		.setDefaultMemberPermissions(0)
@@ -73,7 +82,7 @@ module.exports = {
 				let isFail = true;
 				let battery = '';
 				try {
-					const { error, stdout, stderr } = await exec('termux-battery-status');
+					const { error, stdout, stderr } = await execPromise('termux-battery-status');
 					if (error) {
 						console.log(error);
 					}
@@ -92,7 +101,7 @@ module.exports = {
 				}
 
 				try {
-					const { error, stdout, stderr } = await exec('uptime -p');
+					const { error, stdout, stderr } = await execPromise('uptime -p');
 					if (error) {
 						console.log(error);
 					}
@@ -107,7 +116,7 @@ module.exports = {
 				}
 
 				try {
-					const { error, stdout, stderr } = await exec(
+					const { error, stdout, stderr } = await execPromise(
 						'free -m --si | awk \'FNR == 2 {print $3" MB / "$2" MB"}\''
 					);
 					if (error) {
@@ -188,25 +197,26 @@ module.exports = {
 
 			case 'log': {
 				await interaction.deferReply();
+				const lines = interaction.options.getInteger('lines') ?? 200;
 
-				let stdout, stderr;
+				const filePath = 'tmpfiles/log.txt';
+				const tail = await exec(`tail -n ${lines} bot.log > ${filePath}`);
+				if (tail.error) {
+					return await interaction.editReply(createErrorEmbed(tail.error));
+				}
+
+				const file = new AttachmentBuilder(filePath);
+
 				try {
-					({ stdout, stderr } = await exec('tail -n 100 bot.log'));
-				} catch (error) {
-					return await interaction.editReply({
-						content: `### Error:\n \`\`\`${error}\`\`\``,
+					await interaction.editReply({
+						content: `## Last ${lines} lines of logs:`,
+						files: [file],
 					});
+				} catch (error) {
+					await interaction.editReply(createErrorEmbed(error));
 				}
 
-				const text = `${stdout + stderr}`;
-				await interaction.editReply({ content: '## Last 100 lines of logs:' });
-
-				const responseParts = splitTextWithWordWrap(text, 1950);
-
-				for (const part of responseParts) {
-					await interaction.followUp({ content: `\`\`\`${part}\`\`\`` });
-				}
-
+				await this.deleteFile(filePath);
 				return;
 			}
 

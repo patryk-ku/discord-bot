@@ -1,5 +1,7 @@
 const fs = require('fs').promises;
 const { EmbedBuilder } = require('discord.js');
+const util = require('util');
+const execPromise = util.promisify(require('child_process').exec);
 
 exports.downloadFile = async (url, path, retry = false) => {
 	let response;
@@ -149,4 +151,21 @@ exports.createWarningEmbed = (message) => {
 		.setColor('#FFCB4D')
 		.setDescription(`### :warning:\n${message}`);
 	return { content: '', embeds: [embed] };
+};
+
+/**
+ * Executes a system command and returns the result.
+ *
+ * @async
+ * @param {string} command - The system command to execute.
+ * @returns {Promise<{ output?: string, error?: any }>} An object containing the command's output (stdout and stderr concatenated) if successful,
+ * or an error if the command execution fails.
+ */
+exports.exec = async (command) => {
+	try {
+		const { stdout, stderr } = await execPromise(command);
+		return { output: stdout + stderr };
+	} catch (error) {
+		return { error };
+	}
 };
