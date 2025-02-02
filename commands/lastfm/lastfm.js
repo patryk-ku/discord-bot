@@ -780,13 +780,13 @@ module.exports = {
 
 							// Check if album cover url exists
 							if (song.image[3]['#text']) {
-								songEmbed.setAuthor({
-									name: `${song.artist['#text']} - ${song.name}`,
+								songEmbed.setFooter({
+									text: `${song.artist['#text']} - ${song.name}`,
 									iconURL: song.image[3]['#text'],
 								});
 							} else {
-								songEmbed.setAuthor({
-									name: `${song.artist['#text']} - ${song.name}`,
+								songEmbed.setFooter({
+									text: `${song.artist['#text']} - ${song.name}`,
 								});
 							}
 
