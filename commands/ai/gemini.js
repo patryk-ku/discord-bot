@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-require('dotenv').config();
 const { fetchGemini, prepareImagePrompt } = require('../../helpers/gemini.js');
 const {
 	splitTextWithWordWrap,

@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const validator = require('validator');
-require('dotenv').config();
 const Listenbrainz = require('../../helpers/listenbrainz');
 
 module.exports = {

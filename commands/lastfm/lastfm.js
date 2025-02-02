@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const validator = require('validator');
 const { request } = require('undici');
-require('dotenv').config();
 const Lastfm = require('../../helpers/lastfm');
 const helperFunctions = require('../../helpers/functions');
 const { exec } = require('child_process');

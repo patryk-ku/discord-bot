@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-require('dotenv').config();
 const Lastfm = require('../../helpers/lastfm');
 
 module.exports = {

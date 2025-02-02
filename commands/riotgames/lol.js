@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const validator = require('validator');
 const Sequelize = require('sequelize');
-require('dotenv').config();
 const Lol = require('../../helpers/lol');
 const { secondsToHoursMinutes } = require('../../helpers/functions');
 

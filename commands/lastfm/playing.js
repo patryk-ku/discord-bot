@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-require('dotenv').config();
 const Sequelize = require('sequelize');
 const Lastfm = require('../../helpers/lastfm');
 

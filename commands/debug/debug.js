@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
-require('dotenv').config();
 const util = require('util');
 const execPromise = util.promisify(require('child_process').exec);
 const { exec, createErrorEmbed } = require('../../helpers/functions.js');
