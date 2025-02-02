@@ -99,13 +99,13 @@ These commands can only be used by the owner of an instance of this bot
 | ----------- | ----------- |
 | `/debug termux` | Debug info about the Termux instance (if in use). |
 | `/debug settings` | Debug info about bot enabled APIs and settings. |
+| `/debug log` | Show last x lines of logs. |
 
 ## Requirements
 
 - Node.js v18 or higher
-- yt-dlp (for `/embed` command)
-- MP4Box (for `/embed` command, optional in some cases)
-- Any modern Linux instalation (for now this bot is linux only, may change later)
+- yt-dlp with ffmpeg (for `/embed` command)
+- Any modern Linux instalation
 
 ## Installation and setup
 
