@@ -32,6 +32,16 @@ module.exports = {
 			);
 		}
 
+		let link = url;
+		if (!/^https?:\/\//i.test(url)) {
+			link = 'https://' + link;
+		}
+		const twitterRegex = /^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)(\/.*)?$/i;
+		if (twitterRegex.test(link)) {
+			link = link.replace(/(twitter|x)(?=\.com)/i, 'fixupx');
+			return await interaction.editReply(link);
+		}
+
 		// Blacklisted urls (TODO: add more later)
 		const blacklist = [
 			{
@@ -93,20 +103,9 @@ module.exports = {
 			console.log(`error: ${error.message}`);
 
 			// Try to use external services if download failed
-			let link = url;
-			if (!/^https?:\/\//i.test(url)) {
-				link = 'https://' + link;
-			}
-
 			const instaRegex = /^(https?:\/\/)?(www\.)?instagram\.com(\/.*)?$/i;
 			if (instaRegex.test(link)) {
 				link = link.replace('instagram', 'ddinstagram');
-				return await interaction.editReply(link);
-			}
-
-			const twitterRegex = /^(https?:\/\/)?(www\.)?(twitter\.com|x\.com)(\/.*)?$/i;
-			if (twitterRegex.test(link)) {
-				link = link.replace(/(twitter|x)(?=\.com)/i, 'fixupx');
 				return await interaction.editReply(link);
 			}
 
