@@ -79,15 +79,13 @@ module.exports = {
 			if (stderr) {
 				console.log(stderr);
 			}
-
 			console.log(stdout);
+
 			if (stdout.includes('File is larger than max-filesize')) {
-				return await interaction.editReply(
-					createErrorEmbed(`Max file size exceeded. \`${url}\``, 'Download failed')
-				);
+				throw new Error('max-filesize');
 			}
 		} catch (error) {
-			if (error.stderr.includes('ERROR: Unsupported URL')) {
+			if (error?.stderr?.includes('ERROR: Unsupported URL')) {
 				return await interaction.editReply(
 					createErrorEmbed(`Unsupported URL. \`${url}\``, 'Download failed')
 				);
@@ -110,6 +108,12 @@ module.exports = {
 			if (twitterRegex.test(link)) {
 				link = link.replace(/(twitter|x)(?=\.com)/i, 'fixupx');
 				return await interaction.editReply(link);
+			}
+
+			if (error.message == 'max-filesize') {
+				return await interaction.editReply(
+					createErrorEmbed(`Max file size exceeded. \`${url}\``, 'Download failed')
+				);
 			}
 
 			return await interaction.editReply(
