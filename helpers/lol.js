@@ -832,3 +832,22 @@ exports.leagueofgraphsMatchLink = (region, gameId) => {
 exports.porofessorLiveLink = (region, nickname) => {
 	return `https://porofessor.gg/live/${this.regionCodeToName(region)}/${querystring.escape(nickname.replace('#', '-'))}`;
 };
+
+exports.roleToEmoji = (role) => {
+	switch (role.toUpperCase()) {
+		case 'TOP':
+			return '<:lol_role_top:1335460878879031306>';
+		case 'JUNGLE':
+			return '<:lol_role_jungle:1335460865494880256>';
+		case 'MIDDLE':
+			return '<:lol_role_mid:1335460792488693851>';
+		case 'BOTTOM':
+			return '<:lol_role_bot:1335460847132213278>';
+		case 'UTILITY':
+			return '<:lol_role_support:1335460871941656757>';
+		case 'FILL':
+			return '<:lol_role_fill:1335460859182448680>';
+		default:
+			return '';
+	}
+};

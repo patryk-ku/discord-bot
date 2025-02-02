@@ -259,21 +259,20 @@ module.exports = {
 
 							// Fix for aram and 'utility' for support
 							if (positionName.length > 0) {
-								if (positionName === 'UTILITY') {
-									positionName = 'SUPPORT';
-								}
-								positionName += ' ┃ ';
+								positionName = Lol.roleToEmoji(positionName);
 							}
 
 							const gameEmbed = new EmbedBuilder()
+								.setAuthor({
+									name: `${Lol.getQueueNameById(match.info.queueId)} - ${playerInfo.win === true ? 'VICTORY' : 'DEFEAT'} (${secondsToHoursMinutes(match.info.gameDuration)})`,
+									iconURL: Lol.getChampionAvatar(playerInfo.championName),
+									url: Lol.leagueofgraphsMatchLink(region, match.info.gameId),
+								})
 								.setDescription(
 									`
-### ${Lol.getQueueNameById(match.info.queueId)} - ${playerInfo.win === true ? 'VICTORY' : 'DEFEAT'} (${secondsToHoursMinutes(match.info.gameDuration)})
-${positionName}**${playerInfo.championName}** ┃ ${playerInfo.kills} / ${playerInfo.deaths} / ${playerInfo.assists} ┃ ${playerInfo.totalMinionsKilled + playerInfo.neutralMinionsKilled} cs
-[leagueofgraphs.com](https://www.leagueofgraphs.com/match/${Lol.regionCodeToName(region)}/${match.info.gameId})
+${positionName} ${playerInfo.championName} ┃ **${playerInfo.kills}** / ${playerInfo.deaths} / ${playerInfo.assists} ┃ **${playerInfo.totalMinionsKilled + playerInfo.neutralMinionsKilled}** cs
 `
-								)
-								.setThumbnail(Lol.getChampionAvatar(playerInfo.championName));
+								);
 
 							// Set embed color based on win/lose
 							if (playerInfo.win === true) {
@@ -348,7 +347,7 @@ ${positionName}**${playerInfo.championName}** ┃ ${playerInfo.kills} / ${player
 
 						if (embeds.length == 0) {
 							return await interaction.editReply(
-								'No one on this server is playing right now.'
+								'<:missing_ping:1335460885426208870> No one on this server is playing right now.'
 							);
 						}
 
