@@ -83,6 +83,23 @@ exports.secondsToHoursMinutes = (s) => {
 };
 
 /**
+ * Converts a timestamp (in milliseconds) to a formatted date string (hh:mm • dd/mm/yyyy).
+ *
+ * @param {number} timestamp - The timestamp to convert (in milliseconds).
+ * @returns {string} The formatted date string.
+ */
+exports.timestampToDate = (timestamp) => {
+	const date = new Date(timestamp);
+	const hours = String(date.getHours()).padStart(2, '0');
+	const minutes = String(date.getMinutes()).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
+	const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+	const year = date.getFullYear();
+
+	return `${hours}:${minutes} • ${day}/${month}/${year}`;
+};
+
+/**
  * Splits a string into an array of substrings with a maximum length,
  * ensuring that words are not broken across substrings and handling
  * markdown bullet points correctly.

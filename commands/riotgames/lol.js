@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const validator = require('validator');
 const Sequelize = require('sequelize');
 const Lol = require('../../helpers/lol');
-const { secondsToHoursMinutes } = require('../../helpers/functions');
+const { secondsToHoursMinutes, timestampToDate } = require('../../helpers/functions');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -270,7 +270,7 @@ module.exports = {
 								})
 								.setDescription(
 									`
-${positionName} ${playerInfo.championName} ┃ **${playerInfo.kills}** / ${playerInfo.deaths} / ${playerInfo.assists} ┃ **${playerInfo.totalMinionsKilled + playerInfo.neutralMinionsKilled}** cs
+${positionName} ${playerInfo.championName} ┃ **${playerInfo.kills}** / ${playerInfo.deaths} / ${playerInfo.assists} ┃ **${playerInfo.totalMinionsKilled + playerInfo.neutralMinionsKilled}** cs ┃ ${timestampToDate(match.info.gameCreation)}
 `
 								);
 
