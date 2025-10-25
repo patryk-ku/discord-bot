@@ -105,7 +105,7 @@ module.exports = {
 			// Try to use external services if download failed
 			const instaRegex = /^(https?:\/\/)?(www\.)?instagram\.com(\/.*)?$/i;
 			if (instaRegex.test(link)) {
-				link = link.replace('instagram', 'ddinstagram');
+				link = link.replace('instagram', 'eeinstagram');
 				return await interaction.editReply(link);
 			}
 
