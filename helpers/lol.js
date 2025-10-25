@@ -1,4 +1,6 @@
 const querystring = require('node:querystring');
+const { EmbedBuilder } = require('discord.js');
+const { secondsToHoursMinutes } = require('./functions');
 const Ddragon = require('./lol_ddragon');
 
 exports.getRouteByRegion = (region) => {
@@ -371,16 +373,34 @@ exports.getQueueNameById = (id) => {
 			queueId: 830,
 			map: "Summoner's Rift",
 			description: 'Co-op vs. AI Intro Bot games',
-			notes: null,
+			notes: 'Deprecated in March 2024 in favor of queueId 870',
 		},
 		{
 			queueId: 840,
 			map: "Summoner's Rift",
 			description: 'Co-op vs. AI Beginner Bot games',
-			notes: null,
+			notes: 'Deprecated in March 2024 in favor of queueId 880',
 		},
 		{
 			queueId: 850,
+			map: "Summoner's Rift",
+			description: 'Co-op vs. AI Intermediate Bot games',
+			notes: 'Deprecated in March 2024 in favor of queueId 890',
+		},
+		{
+			queueId: 870,
+			map: "Summoner's Rift",
+			description: 'Co-op vs. AI Intro Bot games',
+			notes: null,
+		},
+		{
+			queueId: 880,
+			map: "Summoner's Rift",
+			description: 'Co-op vs. AI Beginner Bot games',
+			notes: null,
+		},
+		{
+			queueId: 890,
 			map: "Summoner's Rift",
 			description: 'Co-op vs. AI Intermediate Bot games',
 			notes: null,
@@ -512,6 +532,12 @@ exports.getQueueNameById = (id) => {
 			notes: 'Deprecated in patch 9.2',
 		},
 		{
+			queueId: 1210,
+			map: 'Convergence',
+			description: "Teamfight Tactics Choncc's Treasure Mode",
+			notes: 'null',
+		},
+		{
 			queueId: 1300,
 			map: 'Nexus Blitz',
 			description: 'Nexus Blitz games',
@@ -528,6 +554,36 @@ exports.getQueueNameById = (id) => {
 			map: 'Rings of Wrath',
 			description: 'Arena',
 			notes: null,
+		},
+		{
+			queueId: 1710,
+			map: 'Rings of Wrath',
+			description: 'Arena',
+			notes: '16 player lobby',
+		},
+		{
+			queueId: 1810,
+			map: 'Swarm',
+			description: 'Swarm Mode Games',
+			notes: 'Swarm Mode 1 player',
+		},
+		{
+			queueId: 1820,
+			map: 'Swarm Mode Games',
+			description: 'Swarm',
+			notes: 'Swarm Mode 2 players',
+		},
+		{
+			queueId: 1830,
+			map: 'Swarm Mode Games',
+			description: 'Swarm',
+			notes: 'Swarm Mode 3 players',
+		},
+		{
+			queueId: 1840,
+			map: 'Swarm Mode Games',
+			description: 'Swarm',
+			notes: 'Swarm Mode 4 players',
 		},
 		{
 			queueId: 1900,
@@ -570,7 +626,7 @@ exports.getQueueNameById = (id) => {
 	return name;
 };
 
-exports.ddragonVer = '14.8.1';
+exports.ddragonVer = '15.2.1';
 
 exports.getChampionAvatar = (name) => {
 	return `https://ddragon.leagueoflegends.com/cdn/${this.ddragonVer}/img/champion/${name}.png`;
@@ -692,7 +748,7 @@ exports.getMatch = async (id, region) => {
 };
 
 exports.getNowPlayingMatch = async (puuid, region) => {
-	const REGION = this.getRouteByRegion(region);
+	const _REGION = this.getRouteByRegion(region);
 
 	let liveMatch;
 	try {
@@ -726,4 +782,72 @@ exports.getNowPlayingMatch = async (puuid, region) => {
 	}
 
 	return liveMatch;
+};
+
+exports.parseNowPlayingMatch = (match, puuid) => {
+	// Find correct player
+	const playerInfo = match.participants.filter((player) => player.puuid == puuid)[0];
+	const data = {};
+
+	data.gameTime = 'loading screen';
+	if (match.gameLength > 0) {
+		data.gameTime = secondsToHoursMinutes(match.gameLength);
+	}
+
+	data.champion = this.getChampionNameById(playerInfo.championId);
+	data.spell1 = this.getSummonersNameById(playerInfo.spell1Id);
+	data.spell2 = this.getSummonersNameById(playerInfo.spell2Id);
+
+	data.icon = this.getProfileIcon(playerInfo.profileIconId);
+	data.name = playerInfo.riotId;
+
+	return data;
+};
+
+exports.nowPlayingEmbed = (match, parsedMatch, region, nickname, discordUserId) => {
+	return new EmbedBuilder()
+		.setColor(0x0ba2ca)
+		.setAuthor({
+			name: parsedMatch.name,
+			iconURL: parsedMatch.icon,
+			url: this.leagueofgraphsProfileLink(region, nickname),
+		})
+		.setDescription(
+			`
+<@${discordUserId}> - **${this.getQueueNameById(match.gameQueueConfigId)}** (${parsedMatch.gameTime})
+**${parsedMatch.champion}** (${parsedMatch.spell1}, ${parsedMatch.spell2}) **|** [porofessor](${this.porofessorLiveLink(region, nickname)}) **|**  [match link](${this.leagueofgraphsMatchLink(region, match.gameId)})
+`
+		)
+		.setThumbnail(this.getChampionAvatar(parsedMatch.champion));
+};
+
+exports.leagueofgraphsProfileLink = (region, nickname) => {
+	return `https://www.leagueofgraphs.com/summoner/${this.regionCodeToName(region)}/${querystring.escape(nickname.replace('#', '-'))}`;
+};
+
+exports.leagueofgraphsMatchLink = (region, gameId) => {
+	return `https://www.leagueofgraphs.com/match/${this.regionCodeToName(region)}/${gameId}`;
+};
+
+exports.porofessorLiveLink = (region, nickname) => {
+	return `https://porofessor.gg/live/${this.regionCodeToName(region)}/${querystring.escape(nickname.replace('#', '-'))}`;
+};
+
+exports.roleToEmoji = (role) => {
+	switch (role.toUpperCase()) {
+		case 'TOP':
+			return '<:lol_role_top:1335460878879031306>';
+		case 'JUNGLE':
+			return '<:lol_role_jungle:1335460865494880256>';
+		case 'MIDDLE':
+			return '<:lol_role_mid:1335460792488693851>';
+		case 'BOTTOM':
+			return '<:lol_role_bot:1335460847132213278>';
+		case 'UTILITY':
+			return '<:lol_role_support:1335460871941656757>';
+		case 'FILL':
+			return '<:lol_role_fill:1335460859182448680>';
+		default:
+			return '';
+	}
 };

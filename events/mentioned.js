@@ -1,6 +1,9 @@
-const { Events } = require('discord.js');
-require('dotenv').config();
-const { fetchGemini, prepareImagePrompt } = require('../helpers/gemini.js');
+const { Events, EmbedBuilder } = require('discord.js');
+const {
+	fetchGemini,
+	prepareImagePrompt,
+	prepareVoiceMessagePrompt,
+} = require('../helpers/gemini.js');
 const { splitTextWithWordWrap, createErrorEmbed } = require('../helpers/functions.js');
 
 module.exports = {
@@ -13,6 +16,77 @@ module.exports = {
 		// Ignore messages from bots
 		if (message.author.bot) {
 			return;
+		}
+
+		// Detect if voice message and create transcription
+		if (process.env.TRANSCRIPTION && message.attachments.size == 1) {
+			const attachment = message.attachments.first();
+
+			if (
+				attachment.contentType &&
+				attachment.contentType.startsWith('audio/') &&
+				attachment.name == 'voice-message.ogg'
+			) {
+				console.log('Voice message detected.');
+				console.log('Downloading audio file and preparing prompt.');
+				const chat = await prepareVoiceMessagePrompt(attachment);
+				if (chat.error) {
+					console.log(chat.error);
+					return;
+				}
+
+				// Fetching Gemini API
+				console.log('Fetching Gemini API.');
+				const model = 'gemini-2.0-flash';
+				let response = await fetchGemini(chat, { model: model });
+				if (response.error) {
+					console.log(response.error);
+
+					// Try again if error
+					console.log('Fetching Gemini API again.');
+					response = await fetchGemini(chat, { model: model });
+					if (response.error) {
+						console.log(response.error);
+						return;
+					}
+				}
+
+				const answer = new EmbedBuilder().setColor('#4c86e3').setAuthor({
+					name: 'Voice Message Transcription:',
+					iconURL: message.author.avatarURL(),
+				});
+
+				// 2000 chars limit for single message
+				if (response.length <= 2000) {
+					answer
+						.setFooter({ text: model })
+						.setTimestamp(new Date())
+						.setDescription(response);
+
+					return message.reply({ content: '', embeds: [answer] });
+				} else {
+					const responseParts = splitTextWithWordWrap(response, 2000);
+					const embeds = [];
+
+					answer.setDescription(responseParts[0]);
+					responseParts.shift();
+
+					for (const part of responseParts) {
+						const answerPart = new EmbedBuilder()
+							.setColor('#4c86e3')
+							.setDescription(part);
+						embeds.push(answerPart);
+					}
+
+					embeds.at(-1).setFooter({ text: model });
+					embeds.at(-1).setTimestamp(new Date());
+
+					return message.reply({
+						content: '',
+						embeds: [answer, ...embeds],
+					});
+				}
+			}
 		}
 
 		// React only for mentions from users but not @everyone and @here

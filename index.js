@@ -3,7 +3,6 @@ const path = require('node:path');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 require('dotenv').config();
 const Sequelize = require('sequelize');
-// const { DataTypes } = require('sequelize');
 const dns = require('dns');
 const { exec } = require('child_process');
 const util = require('util');

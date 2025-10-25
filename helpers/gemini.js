@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-const { HttpsProxyAgent } = require('https-proxy-agent');
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 /**
@@ -55,6 +53,49 @@ exports.prepareImagePrompt = async (text, attachment) => {
 };
 
 /**
+ * Prepares a prompt object with an audio, ready to be sent as an API request.
+ *
+ * @param {object} attachment - An object containing attachment information.
+ * @returns {Promise<object>} A promise resolving to an object containing the prompt and base64 encoded audio, ready for API request.
+ */
+exports.prepareVoiceMessagePrompt = async (attachment) => {
+	// Check audio size. Max 20 MB for enire request so I let 12 MB for audio because of base64 conversion rate
+	const maxSize = 1024 * 1024 * 12;
+	if (Number(attachment.size) > maxSize) {
+		return { error: 'File too big. (Max file size is **12 MB**)' };
+	}
+
+	// Donwnload file to buffer
+	let buffer;
+	try {
+		const response = await fetch(attachment.url);
+		buffer = await response.arrayBuffer();
+	} catch (error) {
+		console.log(error);
+		return { error: 'Failed to download file.' };
+	}
+
+	// Prepare prompt
+	const prompt = [
+		{
+			parts: [
+				{
+					text: "Please transcribe the following voice message audio with high accuracy in the speaker's original language. Capture all spoken words exactly as delivered—including pauses, emphasis, and any nuances in tone—and format the text clearly. If there are multiple speakers, indicate speaker changes appropriately. Do not translate the audio; the transcription should remain in the original language of the speaker. Provide the complete transcription in plain text.",
+				},
+				{
+					inlineData: {
+						data: Buffer.from(buffer).toString('base64'),
+						mimeType: attachment.contentType,
+					},
+				},
+			],
+		},
+	];
+
+	return prompt;
+};
+
+/**
  * Executes a request to the Gemini API with the provided chat history and settings.
  *
  * @async
@@ -63,15 +104,17 @@ exports.prepareImagePrompt = async (text, attachment) => {
  * @param {number} [settings.maxOutputTokens] - Maximum number of tokens in response.
  * @param {number} [settings.temperature=1.0] - A temperature value between 0.0 and 2.0. Defaults to 1.0.
  *                                            This controls the creativity of the response (higher values are more creative).
- * @param {string} [settings.model="gemini-1.5-flash"] - The name of the model to use. Defaults to "gemini-1.5-flash".
+ * @param {string} [settings.model="gemini-2.0-flash"] - The name of the model to use. Defaults to "gemini-2.0-flash".
  * @returns {Promise<string|Object>} - A Promise that resolves to either the response from the Gemini API
  *                                     as a string or an object with an "error" key containing the error description.
  */
 exports.fetchGemini = async (chatHistory, settings = {}) => {
-	let model = 'gemini-1.5-flash';
-	if (settings?.model) model = settings.model;
+	let model = 'gemini-2.0-flash';
+	if (settings?.model) {
+		model = settings.model;
+	}
 
-	// models: gemini-pro gemini-1.5-pro gemini-1.5-flash
+	// models: gemini-1.5-pro gemini-2.0-flash gemini-2.0-flash-lite
 	const API_URL = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
 
 	const data = {
@@ -109,13 +152,6 @@ exports.fetchGemini = async (chatHistory, settings = {}) => {
 		method: 'post',
 		body: JSON.stringify(data),
 	};
-
-	// Use proxy for API call if proxy ip set in .env file
-	let proxyAgent;
-	if (process.env.PROXY_URL) {
-		proxyAgent = new HttpsProxyAgent(process.env.PROXY_URL);
-		requestOptions.agent = proxyAgent;
-	}
 
 	let response, json;
 

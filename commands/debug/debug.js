@@ -1,9 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { generateDependencyReport } = require('@discordjs/voice');
-require('dotenv').config();
-const { exec } = require('child_process');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const util = require('util');
-const execPromise = util.promisify(exec);
+const execPromise = util.promisify(require('child_process').exec);
+const { exec, createErrorEmbed } = require('../../helpers/functions.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -25,14 +23,24 @@ module.exports = {
 		)
 
 		.addSubcommand((subcommand) =>
-			subcommand.setName('voice').setDescription('Debug info about the voice internals.')
-		)
-
-		.addSubcommand((subcommand) =>
 			subcommand
 				.setName('settings')
 				.setDescription('Debug info about bot enabled APIs and settings.')
 		)
+
+		.addSubcommand((subcommand) =>
+			subcommand
+				.setName('log')
+				.setDescription('Show last x lines of logs.')
+				.addIntegerOption((option) =>
+					option
+						.setName('lines')
+						.setDescription('Number of lines (default 200, max 1000).')
+						.setMinValue(50)
+						.setMaxValue(1000)
+				)
+		)
+
 		.setDefaultMemberPermissions(0)
 		.setDMPermission(false),
 	async execute(interaction) {
@@ -130,18 +138,6 @@ module.exports = {
 				return interaction.editReply({ content: '', embeds: [embed] });
 			}
 
-			case 'voice': {
-				await interaction.deferReply();
-				const report = generateDependencyReport();
-				console.log(report);
-
-				const embed = new EmbedBuilder()
-					.setTitle('Voice internals debug info:')
-					.setDescription('```' + report + '```');
-
-				return interaction.editReply({ content: '', embeds: [embed] });
-			}
-
 			case 'settings': {
 				await interaction.deferReply();
 				const settings = [];
@@ -158,11 +154,13 @@ module.exports = {
 				add('Last.fm', process.env.LASTFM_API_KEY ? ':white_check_mark:' : ':x:');
 				add('Listenbrainz', process.env.LISTENBRAINZ_TOKEN ? ':white_check_mark:' : ':x:');
 				add('Gemini', process.env.GEMINI_API_KEY ? ':white_check_mark:' : ':x:');
-				add('League of Legends', process.env.RIOTGAMES_TOKEN ? ':white_check_mark:' : ':x:');
+				add(
+					'League of Legends',
+					process.env.RIOTGAMES_TOKEN ? ':white_check_mark:' : ':x:'
+				);
 
 				// Other settings
 				separator('Other settings');
-				add('Voice commands', process.env.VOICE_COMMANDS ? ':white_check_mark:' : ':x:');
 				add(
 					'Global slash commands',
 					process.env.DISCORD_GUILD_ID ? ':x:' : ':white_check_mark:'
@@ -194,6 +192,31 @@ module.exports = {
 				const embed = new EmbedBuilder().setDescription(embedString);
 
 				return await interaction.editReply({ content: '', embeds: [embed] });
+			}
+
+			case 'log': {
+				await interaction.deferReply();
+				const lines = interaction.options.getInteger('lines') ?? 200;
+
+				const filePath = 'tmpfiles/log.txt';
+				const tail = await exec(`tail -n ${lines} bot.log > ${filePath}`);
+				if (tail.error) {
+					return await interaction.editReply(createErrorEmbed(tail.error));
+				}
+
+				const file = new AttachmentBuilder(filePath);
+
+				try {
+					await interaction.editReply({
+						content: `## Last ${lines} lines of logs:`,
+						files: [file],
+					});
+				} catch (error) {
+					await interaction.editReply(createErrorEmbed(error));
+				}
+
+				await this.deleteFile(filePath);
+				return;
 			}
 
 			default: {

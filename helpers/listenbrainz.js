@@ -17,7 +17,7 @@ exports.getCoverArt = async (mbid, size = 500) => {
 
 	try {
 		coverArt = await fetch(`http://coverartarchive.org/release/${mbid}/front${size}`)
-			.then(res => {
+			.then((res) => {
 				if (!res.ok) {
 					if (res.status == 404) {
 						// throw new Error('No image for this release on Cover Art Archive.');
@@ -29,7 +29,9 @@ exports.getCoverArt = async (mbid, size = 500) => {
 				return res;
 			})
 			.then((res) => res)
-			.catch(error => { throw new Error(error); });
+			.catch((error) => {
+				throw new Error(error);
+			});
 	} catch (error) {
 		return { error: `Failed to fetch image - \`${error}\`` };
 	}
@@ -51,17 +53,19 @@ exports.getNowPlaying = async (user, nickname) => {
 		nowPlaying = await fetch(`https://api.listenbrainz.org/1/user/${nickname}/playing-now`, {
 			method: 'GET',
 			headers: {
-				'Authorization': `Token ${process.env.LISTENBRAINZ_TOKEN}`,
+				Authorization: `Token ${process.env.LISTENBRAINZ_TOKEN}`,
 			},
 		})
-			.then(res => {
+			.then((res) => {
 				if (!res.ok) {
 					throw new Error(res.statusText);
 				}
 				return res;
 			})
 			.then((res) => res.json())
-			.catch(error => { throw new Error(error); });
+			.catch((error) => {
+				throw new Error(error);
+			});
 	} catch (error) {
 		return { error: `Failed to fetch now playing data - \`${error}\`` };
 	}
@@ -96,7 +100,9 @@ exports.embedNowPlaying = async (user, nickname) => {
 	let coverArt;
 	if (nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid) {
 		// Fetching image
-		coverArt = await this.getCoverArt(nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid);
+		coverArt = await this.getCoverArt(
+			nowPlaying.payload.listens[0].track_metadata.additional_info.release_mbid
+		);
 	} else {
 		coverArt = { error: true };
 	}
@@ -108,8 +114,16 @@ exports.embedNowPlaying = async (user, nickname) => {
 		.setFooter({ text: 'Listenbrainz' })
 		.setTimestamp(new Date())
 		.addFields(
-			{ name: 'track', value: `**${nowPlaying.payload.listens[0].track_metadata.track_name}**`, inline: true },
-			{ name: 'artist', value: `**${nowPlaying.payload.listens[0].track_metadata.artist_name}**`, inline: true },
+			{
+				name: 'track',
+				value: `**${nowPlaying.payload.listens[0].track_metadata.track_name}**`,
+				inline: true,
+			},
+			{
+				name: 'artist',
+				value: `**${nowPlaying.payload.listens[0].track_metadata.artist_name}**`,
+				inline: true,
+			}
 		);
 
 	// Check if album cover url exists
@@ -118,7 +132,11 @@ exports.embedNowPlaying = async (user, nickname) => {
 	}
 
 	if (nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid) {
-		embed.setAuthor({ name: 'Now playing:', url: `https://musicbrainz.org/recording/${nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid}`, iconURL: user.avatarURL() });
+		embed.setAuthor({
+			name: 'Now playing:',
+			url: `https://musicbrainz.org/recording/${nowPlaying.payload.listens[0].track_metadata.additional_info.recording_mbid}`,
+			iconURL: user.avatarURL(),
+		});
 	} else {
 		embed.setAuthor({ name: 'Now playing:', iconURL: user.avatarURL() });
 	}

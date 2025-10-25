@@ -1,10 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const validator = require('validator');
-const querystring = require('node:querystring');
 const Sequelize = require('sequelize');
-require('dotenv').config();
 const Lol = require('../../helpers/lol');
-const { secondsToHoursMinutes } = require('../../helpers/functions');
+const { secondsToHoursMinutes, timestampToDate } = require('../../helpers/functions');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -65,22 +63,6 @@ module.exports = {
 				.addUserOption((option) =>
 					option.setName('user').setDescription('The user (default you).')
 				)
-				.addStringOption((option) =>
-					option
-						.setName('nickname')
-						.setDescription('User League of Legends nickname with tag (Nickname#TAG)')
-				)
-				.addStringOption((option) =>
-					option
-						.setName('region')
-						.setDescription('User League of Legends region.')
-						.addChoices(
-							{ name: 'EUNE', value: 'eun1' },
-							{ name: 'EUW', value: 'euw1' },
-							{ name: 'KR', value: 'kr' },
-							{ name: 'NA1', value: 'na1' }
-						)
-				)
 				.addIntegerOption((option) =>
 					option
 						.setName('amount')
@@ -128,7 +110,7 @@ module.exports = {
 							});
 
 							return interaction.editReply(
-								`Your League of Legends name is set to: \`${row.listenbrainz}\``
+								`Your League of Legends name is set to: \`${row.riot_name}\``
 							);
 						} catch (error) {
 							if (error.name === 'SequelizeUniqueConstraintError') {
@@ -203,6 +185,7 @@ module.exports = {
 							return interaction.editReply('ERROR: WIP - not in db');
 						}
 						// TODO: check if puuid is empty, in other commands also
+						const discordUserId = userData.get('user');
 						const puuid = userData.get('riot_puuid');
 						const region = userData.get('riot_region');
 						const nickname = userData.get('riot_name');
@@ -213,35 +196,15 @@ module.exports = {
 							return interaction.editReply({ content: match.error });
 						}
 
-						// Find correct player
-						const playerInfo = match.participants.filter(
-							(player) => player.puuid == puuid
-						)[0];
+						const parsedMatch = Lol.parseNowPlayingMatch(match, puuid);
 
-						let gameTime = 'loading screen';
-						if (match.gameLength > 0) {
-							gameTime = secondsToHoursMinutes(match.gameLength);
-						}
-
-						const championName = Lol.getChampionNameById(playerInfo.championId);
-						const summonerSpell1 = Lol.getSummonersNameById(playerInfo.spell1Id);
-						const summonerSpell2 = Lol.getSummonersNameById(playerInfo.spell2Id);
-
-						const gameEmbed = new EmbedBuilder()
-							.setColor(0x0ba2ca)
-							.setAuthor({
-								name: playerInfo.riotId,
-								iconURL: Lol.getProfileIcon(playerInfo.profileIconId),
-								url: `https://www.leagueofgraphs.com/summoner/${Lol.regionCodeToName(region)}/${querystring.escape(nickname.replace('#', '-'))}`,
-							})
-							.setDescription(
-								`
-### Now playing: ${Lol.getQueueNameById(match.gameQueueConfigId)} (${gameTime})
-**${championName}** ┃ summs:  ${summonerSpell1} | ${summonerSpell2}
-- links:  [porofessor.gg](https://porofessor.gg/live/${Lol.regionCodeToName(region)}/${querystring.escape(nickname.replace('#', '-'))}) | [leagueofgraphs.com](https://www.leagueofgraphs.com/match/${Lol.regionCodeToName(region)}/${match.gameId})
-`
-							)
-							.setThumbnail(Lol.getChampionAvatar(championName));
+						const gameEmbed = Lol.nowPlayingEmbed(
+							match,
+							parsedMatch,
+							region,
+							nickname,
+							discordUserId
+						);
 
 						return interaction.editReply({ embeds: [gameEmbed] });
 					}
@@ -253,38 +216,21 @@ module.exports = {
 						);
 						const user = interaction.options.getUser('user') ?? interaction.user;
 						const amount = interaction.options.getInteger('amount') ?? 5;
-						let nickname = interaction.options.getString('nickname');
-						let region = interaction.options.getString('region');
 
-						let puuid = '';
-
-						// Get puuid from db or nickname
-						if (nickname) {
-							if (!region) {
-								return interaction.editReply('ERROR: WIP - missing region');
-							}
-
-							// Obtain PUUID from nickname with tag
-							puuid = await Lol.getUserPuuid(nickname, region);
-							if (puuid.error) {
-								return interaction.editReply({ content: puuid.error });
-							}
-						} else {
-							// Get user nickname from bot database
-							const userData = await interaction.client.Users.findOne({
-								where: { user: user.id },
-							});
-							if (!userData) {
-								return interaction.editReply('ERROR: WIP - not in db');
-							}
-							if (!userData?.get('riot_puuid')) {
-								return interaction.editReply('ERROR: WIP - not in db');
-							}
-							// TODO: check if puuid is empty, in other commands also
-							puuid = userData.get('riot_puuid');
-							region = userData.get('riot_region');
-							nickname = userData.get('riot_name');
+						// Get puuid from db
+						const userData = await interaction.client.Users.findOne({
+							where: { user: user.id },
+						});
+						if (!userData) {
+							return interaction.editReply('ERROR: WIP - not in db');
 						}
+						if (!userData?.get('riot_puuid')) {
+							return interaction.editReply('ERROR: WIP - not in db');
+						}
+						// TODO: check if puuid is empty, in other commands also
+						const puuid = userData.get('riot_puuid');
+						const region = userData.get('riot_region');
+						const nickname = userData.get('riot_name');
 
 						// Get last games id
 						const matchHistory = await Lol.getMatchHistory(puuid, region, amount);
@@ -313,21 +259,20 @@ module.exports = {
 
 							// Fix for aram and 'utility' for support
 							if (positionName.length > 0) {
-								if (positionName === 'UTILITY') {
-									positionName = 'SUPPORT';
-								}
-								positionName += ' ┃ ';
+								positionName = Lol.roleToEmoji(positionName);
 							}
 
 							const gameEmbed = new EmbedBuilder()
+								.setAuthor({
+									name: `${Lol.getQueueNameById(match.info.queueId)} - ${playerInfo.win === true ? 'VICTORY' : 'DEFEAT'} (${secondsToHoursMinutes(match.info.gameDuration)})`,
+									iconURL: Lol.getChampionAvatar(playerInfo.championName),
+									url: Lol.leagueofgraphsMatchLink(region, match.info.gameId),
+								})
 								.setDescription(
 									`
-### ${Lol.getQueueNameById(match.info.queueId)} - ${playerInfo.win === true ? 'VICTORY' : 'DEFEAT'} (${secondsToHoursMinutes(match.info.gameDuration)})
-${positionName}**${playerInfo.championName}** ┃ ${playerInfo.kills} / ${playerInfo.deaths} / ${playerInfo.assists} ┃ ${playerInfo.totalMinionsKilled + playerInfo.neutralMinionsKilled} cs
-- link:  [leagueofgraphs.com](https://www.leagueofgraphs.com/match/${Lol.regionCodeToName(region)}/${match.info.gameId})
+${positionName} ${playerInfo.championName} ┃ **${playerInfo.kills}** / ${playerInfo.deaths} / ${playerInfo.assists} ┃ **${playerInfo.totalMinionsKilled + playerInfo.neutralMinionsKilled}** cs ┃ ${timestampToDate(match.info.gameCreation)}
 `
-								)
-								.setThumbnail(Lol.getChampionAvatar(playerInfo.championName));
+								);
 
 							// Set embed color based on win/lose
 							if (playerInfo.win === true) {
@@ -369,34 +314,47 @@ ${positionName}**${playerInfo.championName}** ┃ ${playerInfo.kills} / ${player
 							);
 						}
 
-						const requests = [];
-						const requestUsersId = [];
+						const embeds = [];
 						for (let i = 0; i < guild.length; i++) {
-							const puuid = guild[i].dataValues.lol_puuid;
-							const region = guild[i].dataValues.lol_region;
+							const discordUserId = guild[i].dataValues.user;
+							const puuid = guild[i].dataValues.riot_puuid;
+							const region = guild[i].dataValues.riot_region;
+							const nickname = guild[i].dataValues.riot_name;
+
+							if (!puuid) {
+								continue;
+							}
 
 							// Fetch match data
 							const match = await Lol.getNowPlayingMatch(puuid, region);
 							if (match.error) {
 								continue;
 							}
+							const parsedMatch = Lol.parseNowPlayingMatch(match, puuid);
+							const gameEmbed = Lol.nowPlayingEmbed(
+								match,
+								parsedMatch,
+								region,
+								nickname,
+								discordUserId
+							);
+							embeds.push(gameEmbed);
 
-							requestUsersId.push(guild[i].dataValues.user);
-							requests.push(match);
-
-							if (i == 24) {
+							if (i == 9) {
 								break;
 							}
 						}
 
-						// const users = await Promise.all(requests).catch((error) => {
-						// 	console.error(error);
-						// 	return interaction.editReply('Error - WIP');
-						// });
+						if (embeds.length == 0) {
+							return await interaction.editReply(
+								'<:missing_ping:1335460885426208870> No one on this server is playing right now.'
+							);
+						}
 
-						// WIP
-
-						return;
+						return interaction.editReply({
+							content: `## Currently Playing Users:`,
+							embeds: [...embeds],
+						});
 					}
 
 					default: {

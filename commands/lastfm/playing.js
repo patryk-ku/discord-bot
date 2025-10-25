@@ -1,5 +1,4 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-require('dotenv').config();
 const Sequelize = require('sequelize');
 const Lastfm = require('../../helpers/lastfm');
 
@@ -7,9 +6,13 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('playing')
 		.setDescription('Replies with entire server now playing song.')
-		.addBooleanOption(option =>
-			option.setName('recent')
-				.setDescription('If the user isn\'t listening to anything right now, show their last song instead.'))
+		.addBooleanOption((option) =>
+			option
+				.setName('recent')
+				.setDescription(
+					"If the user isn't listening to anything right now, show their last song instead."
+				)
+		)
 		.setDMPermission(false),
 	async execute(interaction) {
 		if (!process.env.LASTFM_API_KEY) {
@@ -17,15 +20,21 @@ module.exports = {
 		}
 
 		await interaction.deferReply();
-		console.log(`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`);
+		console.log(
+			`-> New interaction: "${interaction.commandName}" by "${interaction.user.username}" on [${new Date().toString()}]`
+		);
 		const recent = interaction.options.getBoolean('recent');
 
 		const members = await interaction.guild.members.fetch();
-		const membersIds = members.map(member => member.user.id);
-		const guild = await interaction.client.Users.findAll({ where: { user: { [Sequelize.Op.in]: membersIds } } });
+		const membersIds = members.map((member) => member.user.id);
+		const guild = await interaction.client.Users.findAll({
+			where: { user: { [Sequelize.Op.in]: membersIds } },
+		});
 
 		if (guild.length == 0) {
-			return await interaction.editReply('No one on this server has submitted their last.fm nickname to the bot.');
+			return await interaction.editReply(
+				'No one on this server has submitted their last.fm nickname to the bot.'
+			);
 		}
 
 		// TODO: check if nickname is provided
@@ -33,14 +42,16 @@ module.exports = {
 		const requestUsersId = [];
 		for (let i = 0; i < guild.length; i++) {
 			const lastfmNickname = guild[i].dataValues.lastfm;
-			const user = Lastfm.getNowPlaying(await interaction.client.users.fetch(guild[i].dataValues.user), lastfmNickname);
+			const user = Lastfm.getNowPlaying(
+				await interaction.client.users.fetch(guild[i].dataValues.user),
+				lastfmNickname
+			);
 			requestUsersId.push(guild[i].dataValues.user);
 			request.push(user);
 
 			if (i == 24) {
 				break;
 			}
-
 		}
 
 		const users = await Promise.all(request).catch((error) => {
@@ -49,7 +60,7 @@ module.exports = {
 		});
 
 		const songEmbed = new EmbedBuilder()
-			.setColor(0xC3000D)
+			.setColor(0xc3000d)
 			.setAuthor({ name: interaction.guild.name, iconURL: interaction.guild.iconURL() });
 
 		let descriptionString = '### Now Playing:';

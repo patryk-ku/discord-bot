@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require('discord.js');
-require('dotenv').config();
 const { fetchGemini } = require('../../helpers/gemini.js');
 const {
 	splitTextWithWordWrap,
@@ -21,11 +20,11 @@ module.exports = {
 		.addStringOption((option) =>
 			option
 				.setName('model')
-				.setDescription('Gemini model (default: gemini-1.5-pro)')
+				.setDescription('Gemini model (default: gemini-2.0-flash)')
 				.addChoices(
 					{ name: 'gemini-1.5-pro', value: 'gemini-1.5-pro' },
 					{ name: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
-					{ name: 'gemini-pro', value: 'gemini-pro' }
+					{ name: 'gemini-2.0-flash', value: 'gemini-2.0-flash' }
 				)
 		)
 		.setDMPermission(false),
@@ -44,7 +43,7 @@ module.exports = {
 		);
 
 		const amount = interaction.options.getInteger('amount') ?? 200;
-		const model = interaction.options.getString('model') ?? 'gemini-1.5-pro';
+		const model = interaction.options.getString('model') ?? 'gemini-2.0-flash';
 
 		// Fetching messages from Discord channel
 		const messages = [];
@@ -76,6 +75,10 @@ module.exports = {
 			let username;
 
 			if (!username) {
+				username = await interaction.client.users?.cache.get(id)?.globalName;
+			}
+
+			if (!username) {
 				username = await interaction.client.users?.cache.get(id)?.username;
 			}
 
@@ -84,7 +87,9 @@ module.exports = {
 		async function parseMentions(text) {
 			const idList = text.match(/<@(\d+)>/g);
 
-			if (!idList) return text;
+			if (!idList) {
+				return text;
+			}
 
 			const userNames = [];
 
@@ -105,7 +110,8 @@ module.exports = {
 
 		for (const message of messages.values()) {
 			if (message[1].content?.length > 0) {
-				chatHistory += `${message[1].author.username}: ${await parseMentions(message[1].content)}\n\n`;
+				const userName = message[1].author.globalName || message[1].author.username;
+				chatHistory += `${userName}: ${await parseMentions(message[1].content)}\n\n`;
 			}
 		}
 
@@ -119,7 +125,7 @@ module.exports = {
 				role: 'user',
 				parts: [
 					{
-						text: `Summarise briefly but retaining all the key details of web chat user conversations. Use the ironic funny way people express themselves on the internet. At the end, write out the most important information in bullet points. Each message is separated by one blank line and preceded by the username and a colon. Reply in the language in which the conversation mainly took place. Here is the conversation:\n${chatHistory}`,
+						text: `Summarise briefly but retaining all the key details of web chat user conversations. Make it fun and original so it's not a boring read. Feel free to use memes, pop culture references, sarcasm, and irony. Don't be afraid to judge or make fun of users, because it's all in good fun and nothing serious, so don't hold back. Remember to keep it short and concise. At the end, write out the most important information in bullet points. Each message is separated by one blank line and preceded by the username and a colon. Reply in the language in which the conversation mainly took place. Here is the conversation:\n${chatHistory}`,
 					},
 				],
 			},

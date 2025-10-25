@@ -1,5 +1,7 @@
 const fs = require('fs').promises;
 const { EmbedBuilder } = require('discord.js');
+const util = require('util');
+const execPromise = util.promisify(require('child_process').exec);
 
 exports.downloadFile = async (url, path, retry = false) => {
 	let response;
@@ -48,7 +50,7 @@ exports.deleteFile = async (path) => {
 
 	try {
 		await fs.access(path, fs.constants.F_OK);
-	} catch (error) {
+	} catch (_error) {
 		console.log(`File don't exists: ${path}`);
 		return;
 	}
@@ -78,6 +80,23 @@ exports.secondsToHoursMinutes = (s) => {
 	const minutes = Math.floor(s / 60).toString();
 	const seconds = (s % 60).toString();
 	return `${minutes.padStart(2, '0')}:${seconds.padStart(2, '0')}`;
+};
+
+/**
+ * Converts a timestamp (in milliseconds) to a formatted date string (hh:mm • dd/mm/yyyy).
+ *
+ * @param {number} timestamp - The timestamp to convert (in milliseconds).
+ * @returns {string} The formatted date string.
+ */
+exports.timestampToDate = (timestamp) => {
+	const date = new Date(timestamp);
+	const hours = String(date.getHours()).padStart(2, '0');
+	const minutes = String(date.getMinutes()).padStart(2, '0');
+	const day = String(date.getDate()).padStart(2, '0');
+	const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-indexed
+	const year = date.getFullYear();
+
+	return `${hours}:${minutes} • ${day}/${month}/${year}`;
 };
 
 /**
@@ -149,4 +168,21 @@ exports.createWarningEmbed = (message) => {
 		.setColor('#FFCB4D')
 		.setDescription(`### :warning:\n${message}`);
 	return { content: '', embeds: [embed] };
+};
+
+/**
+ * Executes a system command and returns the result.
+ *
+ * @async
+ * @param {string} command - The system command to execute.
+ * @returns {Promise<{ output?: string, error?: any }>} An object containing the command's output (stdout and stderr concatenated) if successful,
+ * or an error if the command execution fails.
+ */
+exports.exec = async (command) => {
+	try {
+		const { stdout, stderr } = await execPromise(command);
+		return { output: stdout + stderr };
+	} catch (error) {
+		return { error };
+	}
 };

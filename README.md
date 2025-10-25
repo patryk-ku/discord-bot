@@ -17,9 +17,6 @@ The behaviour of the bot can be changed by editing the default prompts in the .e
 
 At this moment, access to the Gemini API is free up to 15 queries per minute and 1500 requests per day but this may change at any time.
 
-> [!IMPORTANT]
-> The Google Gemini API is not available for free in Europe at the moment. But you can bypass this by using a VPN or Proxy. You can make the bot use the proxy only for Gemini API commands by setting the `PROXY_URL` variable in the `.env` file.
-
 | command | description |
 | ----------- | ----------- |
 | `/gemini` | A simple query to the AI assistant (without chat history and any aditional prompt settings). It also supports image input. |
@@ -73,17 +70,6 @@ At this moment, access to the Gemini API is free up to 15 queries per minute and
 | `/embed` | Embeds video from given url (insta/reddit/twitter etc). |
 | `/avatar` | Embeds avatar image of given user. |
 
-### Voice
-
-> [!WARNING]
-> These commands are experimental and may not work properly.
-
-| command | description |
-| ----------- | ----------- |
-| `/join` | Request bot to join a voice channel. |
-| `/play` | Request bot to play music from a given link in a voice channel. |
-| `/leave` | Request bot to leave a voice channel. |
-
 ### Administrator commands
 
 They require administrator privileges on the server
@@ -93,6 +79,7 @@ They require administrator privileges on the server
 | `/admin lastfm set` | Set or update last.fm nickname of given user. |
 | `/admin lastfm remove` | Delete lastfm nickname of given user from bot database. |
 | `/admin lastfm users` | List all last.fm users from this server. |
+| `/admin lol set` | Set or update League of Legends nickname of given user. |
 
 ### Configuration commands
 
@@ -103,21 +90,22 @@ These commands can only be used by the owner of an instance of this bot
 | `/config status` | Set bot status. |
 | `/config activity` | Set bot activity. |
 | `/config restart` | Restart bot (use only when hosting a bot with any process manager for node.js, default for this bot is [pm2](https://pm2.keymetrics.io/)). |
+| `/config update` | Git pull from current branch. |
+| `/config branch` | Change git branch. |
 
 ### Debug commands
 
 | command | description |
 | ----------- | ----------- |
 | `/debug termux` | Debug info about the Termux instance (if in use). |
-| `/debug voice` | Debug info about the voice internals. |
 | `/debug settings` | Debug info about bot enabled APIs and settings. |
+| `/debug log` | Show last x lines of logs. |
 
 ## Requirements
 
 - Node.js v18 or higher
-- yt-dlp (for `/embed` command)
-- MP4Box (for `/embed` command, optional in some cases)
-- Any modern Linux instalation (for now this bot is linux only, may change later)
+- yt-dlp with ffmpeg (for `/embed` command)
+- Any modern Linux instalation
 
 ## Installation and setup
 
@@ -135,7 +123,7 @@ These commands can only be used by the owner of an instance of this bot
 
 		- Bot
 		- applications.commands
-		
+
 	- Bot permissions:
 
 		- Read Messages/View Channels
@@ -144,9 +132,6 @@ These commands can only be used by the owner of an instance of this bot
 		- Attach Files
 		- Mention Everyone
 		- Use Slash Commands
-		- Connect
-		- Speak
-		- Use Voice Activity
 
 3. For last.fm features you need to obtain their API key [here](https://www.last.fm/api/account/create). For Listenbrainz features you need your profile token from [here](https://listenbrainz.org/profile/).
 4. Clone repository and rename `.env.example` to `.env`
@@ -164,7 +149,7 @@ These commands can only be used by the owner of an instance of this bot
 	```
 
 6. If you want the bot commands to work on only one server:
-	
+
 	- Uncomment `DISCORD_GUILD_ID` in `.env` and insert your server id here
 
 	and run
@@ -178,7 +163,7 @@ These commands can only be used by the owner of an instance of this bot
 	run
 
 	```sh
-	npm run deploy-global-commands 
+	npm run deploy-global-commands
 	```
 
 7. Finally to start the bot
