@@ -21,18 +21,18 @@
 	"license": "MIT",
 	"dependencies": {
 		"@distube/ytsr": "^2.0.4",
-		"@napi-rs/canvas": "^0.1.80",
-		"discord.js": "^14.24.0",
-		"dotenv": "^17.2.3",
-		"pm2": "^6.0.13",
+		"@napi-rs/canvas": "^0.1.95",
+		"discord.js": "^14.25.1",
+		"dotenv": "^17.3.1",
+		"pm2": "^6.0.14",
 		"sequelize": "^6.37.7",
 		"sqlite3": "^5.1.7",
-		"undici": "^7.16.0",
-		"validator": "^13.15.15"
+		"undici": "^7.22.0",
+		"validator": "^13.15.26"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
-		"nodemon": "^3.1.10"
+		"nodemon": "^3.1.14"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
