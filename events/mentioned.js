@@ -37,7 +37,7 @@ module.exports = {
 
 				// Fetching Gemini API
 				console.log('Fetching Gemini API.');
-				const model = 'gemini-2.0-flash';
+				const model = 'gemini-3-flash-preview';
 				let response = await fetchGemini(chat, { model: model });
 				if (response.error) {
 					console.log(response.error);

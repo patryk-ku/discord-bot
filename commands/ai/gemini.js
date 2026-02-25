@@ -19,12 +19,10 @@ module.exports = {
 		.addStringOption((option) =>
 			option
 				.setName('model')
-				.setDescription('Gemini model (default: gemini-2.0-flash)')
+				.setDescription('Gemini model (default: gemini-3-flash-preview)')
 				.addChoices(
-					{ name: 'gemini-1.5-pro', value: 'gemini-1.5-pro' },
-					{ name: 'gemini-1.5-flash', value: 'gemini-1.5-flash' },
-					{ name: 'gemini-2.0-flash-lite', value: 'gemini-2.0-flash-lite' },
-					{ name: 'gemini-2.0-flash', value: 'gemini-2.0-flash' }
+					{ name: 'gemini-3-flash-preview', value: 'gemini-3-flash-preview' }
+					// { name: 'gemini-3-pro', value: 'gemini-3-pro' }
 				)
 		)
 		.setDMPermission(false),
@@ -43,7 +41,7 @@ module.exports = {
 		);
 		const user = interaction.user;
 		const prompt = interaction.options.getString('prompt');
-		const model = interaction.options.getString('model') ?? 'gemini-2.0-flash';
+		const model = interaction.options.getString('model') ?? 'gemini-3-flash-preview';
 
 		// Check if interaction contains any image and if yes then prepare it for prompt
 		let chat;
