@@ -104,17 +104,17 @@ exports.prepareVoiceMessagePrompt = async (attachment) => {
  * @param {number} [settings.maxOutputTokens] - Maximum number of tokens in response.
  * @param {number} [settings.temperature=1.0] - A temperature value between 0.0 and 2.0. Defaults to 1.0.
  *                                            This controls the creativity of the response (higher values are more creative).
- * @param {string} [settings.model="gemini-3-flash-preview"] - The name of the model to use. Defaults to "gemini-3-flash-preview".
+ * @param {string} [settings.model="gemini-3.1-flash-lite"] - The name of the model to use. Defaults to "gemini-3.1-flash-lite".
  * @returns {Promise<string|Object>} - A Promise that resolves to either the response from the Gemini API
  *                                     as a string or an object with an "error" key containing the error description.
  */
 exports.fetchGemini = async (chatHistory, settings = {}) => {
-	let model = 'gemini-3-flash-preview';
+	let model = 'gemini-3.1-flash-lite';
 	if (settings?.model) {
 		model = settings.model;
 	}
 
-	// models: gemini-3-flash-preview
+	// models: gemini-3.1-flash-lite
 	const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
 
 	const data = {

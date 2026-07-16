@@ -20,10 +20,10 @@ module.exports = {
 		.addStringOption((option) =>
 			option
 				.setName('model')
-				.setDescription('Gemini model (default: gemini-3-flash-preview)')
+				.setDescription('Gemini model (default: gemini-3.1-flash-lite)')
 				.addChoices(
-					{ name: 'gemini-3-flash-preview', value: 'gemini-3-flash-preview' }
-					// { name: 'gemini-3-pro', value: 'gemini-3-pro' }
+					{ name: 'gemini-3.1-flash-lite', value: 'gemini-3.1-flash-lite' },
+					{ name: 'gemini-3.5-flash', value: 'gemini-3.5-flash' }
 				)
 		)
 		.setDMPermission(false),
@@ -42,7 +42,7 @@ module.exports = {
 		);
 
 		const amount = interaction.options.getInteger('amount') ?? 200;
-		const model = interaction.options.getString('model') ?? 'gemini-3-flash-preview';
+		const model = interaction.options.getString('model') ?? 'gemini-3.1-flash-lite';
 
 		// Fetching messages from Discord channel
 		const messages = [];
