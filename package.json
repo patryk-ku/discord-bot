@@ -21,13 +21,12 @@
 	"license": "MIT",
 	"dependencies": {
 		"@distube/ytsr": "^2.0.4",
-		"@napi-rs/canvas": "^0.1.100",
+		"@napi-rs/canvas": "^1.0.2",
 		"discord.js": "^14.27.0",
 		"dotenv": "^17.4.2",
-		"pm2": "^6.0.14",
+		"pm2": "^7.0.3",
 		"sequelize": "^6.37.8",
-		"sqlite3": "^5.1.7",
-		"undici": "^7.28.0",
+		"sqlite3": "^6.0.1",
 		"validator": "^13.15.35"
 	},
 	"devDependencies": {

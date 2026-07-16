@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const validator = require('validator');
-const { request } = require('undici');
 const Lastfm = require('../../helpers/lastfm');
 const helperFunctions = require('../../helpers/functions');
 const { exec } = require('child_process');
@@ -619,8 +618,8 @@ module.exports = {
 								y = 0;
 							for (const album of albums.album) {
 								if (album.image[3]['#text'].length > 0) {
-									const { body } = await request(album.image[3]['#text']);
-									const cover = await Canvas.loadImage(await body.arrayBuffer());
+									const response = await fetch(album.image[3]['#text']);
+									const cover = await Canvas.loadImage(await response.arrayBuffer());
 									context.drawImage(cover, x, y, 300, 300);
 									missingCounter--;
 								}
