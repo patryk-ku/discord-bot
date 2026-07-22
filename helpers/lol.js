@@ -322,6 +322,12 @@ exports.getQueueNameById = (id) => {
 			notes: 'Deprecated in patch 9.23',
 		},
 		{
+			queueId: 480,
+			map: "Summoner's Rift",
+			description: 'Swiftplay Games',
+			notes: null,
+		},
+		{
 			queueId: 490,
 			map: "Summoner's Rift",
 			description: 'Normal (Quickplay)',
@@ -609,9 +615,24 @@ exports.getQueueNameById = (id) => {
 			description: 'Tutorial 3',
 			notes: null,
 		},
+		{
+			queueId: 2300,
+			map: 'The Bandlewood',
+			description: 'Brawl',
+			notes: null,
+		},
+		{
+			queueId: 2400,
+			map: 'Howling Abyss',
+			description: 'ARAM: Mayhem',
+			notes: null,
+		},
 	];
 
-	let name = queues.filter((queue) => queue.queueId === id)[0].description;
+	let name = queues.filter((queue) => queue.queueId === id)?.at(0)?.description;
+	if (!name) {
+		name = 'Unknown Queue';
+	}
 
 	// Delete '5v5' from name
 	if (name.slice(0, 4) === '5v5 ') {
@@ -626,7 +647,7 @@ exports.getQueueNameById = (id) => {
 	return name;
 };
 
-exports.ddragonVer = '15.2.1';
+exports.ddragonVer = '16.14.1';
 
 exports.getChampionAvatar = (name) => {
 	return `https://ddragon.leagueoflegends.com/cdn/${this.ddragonVer}/img/champion/${name}.png`;
